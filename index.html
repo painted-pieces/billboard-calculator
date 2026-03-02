@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billboard &amp; Handpainting Costing Calculator — PPAG</title>
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2d5a7b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Billboard Calc">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- jsPDF + autoTable for direct PDF download (no print dialog) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    /* ─── DESIGN TOKENS ─────────────────────────────────────────── */
+    :root {
+      --primary:      #1a3a5c;
+      --accent:       #2e6da4;
+      --accent-dark:  #1a4d7a;
+      --highlight:    #eef5ff;
+      --gold:         #b8820a;
+      --gold-bg:      #fff8e6;
+      --text:         #1e2b3a;
+      --muted:        #6b7a8d;
+      --border:       #d1dbe8;
+      --card:         #ffffff;
+      --bg:           #eef2f7;
+      --green:        #1a6e42;
+      --green-dark:   #145533;
+    }
+
+    /* ─── RESET & BASE ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px 28px 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ─── APP HEADER ────────────────────────────────────────────── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, var(--primary) 0%, #244f7a 100%);
+      color: white;
+      padding: 22px 30px;
+      border-radius: 14px;
+      margin-bottom: 24px;
+      box-shadow: 0 6px 20px rgba(26,58,92,0.25);
+    }
+    .app-header h1 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      line-height: 1.2;
+    }
+    .app-header .sub {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 4px;
+      letter-spacing: 0.2px;
+    }
+    .header-right { text-align: right; }
+    .header-badge {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: rgba(255,255,255,0.12);
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    /* ─── CARD ──────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--highlight);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .card-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ─── GRIDS ─────────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+    /* ─── FORM FIELDS ───────────────────────────────────────────── */
+    .field-group { display: flex; flex-direction: column; gap: 5px; }
+    label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="tel"] {
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: white;
+      width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(46,109,164,0.13);
+    }
+    input[type="number"] { text-align: right; }
+
+    /* ─── LABOR ROWS (Admin / Computer) ─────────────────────────── */
+    .labor-col-header {
+      display: grid;
+      grid-template-columns: 1fr 130px 130px 110px;
+      gap: 12px;
+      padding: 3px 14px 6px;
+      margin-bottom: 2px;
+    }
+    .labor-col-header span {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      text-align: right;
+    }
+    .labor-col-header span:first-child { text-align: left; }
+
+    .labor-row {
+      display: grid;
+      grid-template-columns: 1fr 130px 130px 110px;
+      gap: 12px;
+      align-items: center;
+      background: var(--highlight);
+      border: 1px solid #dce8f6;
+      border-radius: 9px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+    .labor-row:last-child { margin-bottom: 0; }
+    .row-label { font-size: 0.875rem; font-weight: 600; }
+    .row-label .sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-top: 1px;
+    }
+    .row-rate {
+      text-align: right;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 500;
+      padding-right: 4px;
+    }
+    .row-cost {
+      text-align: right;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--accent);
+    }
+
+    /* ─── ARTIST TIERS ──────────────────────────────────────────── */
+    .artist-section-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin: 18px 0 8px 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .artist-section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .artist-tier {
+      display: grid;
+      grid-template-columns: 1fr 110px 22px 100px 40px 110px;
+      gap: 10px;
+      align-items: center;
+      background: var(--highlight);
+      border: 1px solid #dce8f6;
+      border-radius: 9px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+    .artist-tier:last-child { margin-bottom: 0; }
+    .tier-sep {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .tier-cost {
+      text-align: right;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--accent);
+    }
+
+    /* ─── DIVIDERS & TOTALS ─────────────────────────────────────── */
+    .section-divider {
+      border: none;
+      border-top: 2px dashed var(--border);
+      margin: 18px 0 14px;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 3px 2px;
+    }
+    .t-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .t-value {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    /* ─── NO-PROFIT GRID ────────────────────────────────────────── */
+    .np-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+    /* ─── SUMMARY CARDS ─────────────────────────────────────────── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .summary-card {
+      padding: 18px 20px 20px;
+      border-radius: 11px;
+      color: white;
+    }
+    .summary-card .s-label {
+      font-size: 0.67rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      opacity: 0.72;
+      margin-bottom: 8px;
+    }
+    .summary-card .s-value {
+      font-size: 1.7rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .sc-labor { background: linear-gradient(135deg, #1a3a5c 0%, #2e6da4 100%); }
+    .sc-hours { background: linear-gradient(135deg, #1a5c3a 0%, #2e9e6a 100%); }
+    .sc-np    { background: linear-gradient(135deg, #5c3a1a 0%, #a0682a 100%); }
+
+    /* ─── PRICING TABLE ─────────────────────────────────────────── */
+    .pricing-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .pricing-table thead th {
+      background: var(--primary);
+      color: white;
+      padding: 11px 16px;
+      text-align: right;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
+    .pricing-table thead th:first-child { text-align: left; }
+    .pricing-table tbody td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+    }
+    .pricing-table tbody td:first-child { text-align: left; }
+    .pricing-table tbody tr:hover td { background: #f5f8fc; }
+    .pricing-table .hl td {
+      background: var(--gold-bg) !important;
+      font-weight: 700;
+      border-top: 2px solid var(--gold);
+      border-bottom: 2px solid var(--gold);
+    }
+    .pricing-table .hl td:last-child {
+      color: var(--green);
+      font-size: 1.05rem;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--gold);
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 100px;
+      margin-left: 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+    }
+    .pricing-placeholder {
+      text-align: center !important;
+      color: var(--muted);
+      padding: 22px !important;
+      font-style: italic;
+      font-size: 0.875rem;
+    }
+
+    /* ─── BUTTONS ───────────────────────────────────────────────── */
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 11px 22px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      font-family: inherit;
+      letter-spacing: 0.1px;
+      white-space: nowrap;
+    }
+    .btn-reset {
+      background: white;
+      color: var(--muted);
+      border: 1.5px solid var(--border);
+    }
+    .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-save {
+      background: var(--green);
+      color: white;
+      box-shadow: 0 2px 8px rgba(26,110,66,0.22);
+    }
+    .btn-save:hover {
+      background: var(--green-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(26,110,66,0.32);
+    }
+
+    .btn-load {
+      background: white;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
+    }
+    .btn-load:hover {
+      background: var(--highlight);
+      transform: translateY(-1px);
+    }
+
+    .btn-pdf {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 8px rgba(46,109,164,0.25);
+    }
+    .btn-pdf:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 5px 16px rgba(46,109,164,0.35);
+    }
+
+    /* ─── PRINT (manual Ctrl+P fallback) ───────────────────────── */
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      html { font-size: 12px; }
+      body { background: white; padding: 0; max-width: 100%; }
+      .no-print { display: none !important; }
+      .card { box-shadow: none; border-radius: 6px; margin-bottom: 12px; padding: 16px 18px; break-inside: avoid; }
+      .sc-labor { background: linear-gradient(135deg, #1a3a5c 0%, #2e6da4 100%) !important; }
+      .sc-hours { background: linear-gradient(135deg, #1a5c3a 0%, #2e9e6a 100%) !important; }
+      .sc-np    { background: linear-gradient(135deg, #5c3a1a 0%, #a0682a 100%) !important; }
+      .pricing-table thead th { -webkit-print-color-adjust: exact !important; }
+      @page { margin: 14mm 12mm; size: letter portrait; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════════ -->
+<header class="app-header">
+  <div>
+    <h1>Billboard &amp; Handpainting Costing Calculator</h1>
+    <div class="sub">Painted Pieces Art Group &nbsp;·&nbsp; Job Cost Estimator</div>
+  </div>
+  <div class="header-right">
+    <div class="header-badge">PPAG</div>
+  </div>
+</header>
+
+<!-- ═══ JOB DETAILS ══════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title">Job Details</div>
+  <div class="grid-2" style="margin-bottom:14px;">
+    <div class="field-group">
+      <label>Job Name</label>
+      <input type="text" id="jobName" placeholder="e.g. Main St Billboard — Acme Co.">
+    </div>
+    <div class="field-group">
+      <label>Address / Location</label>
+      <input type="text" id="jobAddress" placeholder="e.g. 123 Main St, Anytown, CA">
+    </div>
+  </div>
+  <div class="grid-3">
+    <div class="field-group">
+      <label>Contact Name</label>
+      <input type="text" id="contactName" placeholder="Full Name">
+    </div>
+    <div class="field-group">
+      <label>Phone</label>
+      <input type="tel" id="contactPhone" placeholder="(555) 000-0000">
+    </div>
+    <div class="field-group">
+      <label>Email</label>
+      <input type="email" id="contactEmail" placeholder="email@example.com">
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LABOR ═════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title">Labor</div>
+
+  <div class="labor-col-header">
+    <span>Description</span>
+    <span>Hours</span>
+    <span>Rate</span>
+    <span>Cost</span>
+  </div>
+
+  <!-- Admin -->
+  <div class="labor-row">
+    <div class="row-label">
+      Admin
+      <div class="sub">$50.00 / hour</div>
+    </div>
+    <div class="field-group">
+      <input type="number" id="adminHours" min="0" step="0.5" value="0" placeholder="0">
+    </div>
+    <div class="row-rate">$50.00 / hr</div>
+    <div id="adminCost" class="row-cost">$0.00</div>
+  </div>
+
+  <!-- Computer -->
+  <div class="labor-row">
+    <div class="row-label">
+      Computer / Design
+      <div class="sub">$35.00 / hour</div>
+    </div>
+    <div class="field-group">
+      <input type="number" id="computerHours" min="0" step="0.5" value="0" placeholder="0">
+    </div>
+    <div class="row-rate">$35.00 / hr</div>
+    <div id="computerCost" class="row-cost">$0.00</div>
+  </div>
+
+  <!-- Artist Tiers -->
+  <div class="artist-section-label">Artists — Day Rate Pricing</div>
+
+  <div style="display:grid; grid-template-columns:1fr 110px 22px 100px 40px 110px; gap:10px; padding:3px 14px 6px; margin-bottom:2px;">
+    <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">Tier</span>
+    <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;"># Artists</span>
+    <span></span>
+    <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;"># Days</span>
+    <span></span>
+    <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;">Cost</span>
+  </div>
+
+  <!-- Tier 1 — $450/day -->
+  <div class="artist-tier">
+    <div class="row-label">Artist — Tier 1<div class="sub">$450 / day &nbsp;·&nbsp; $56.25 / hr</div></div>
+    <input type="number" id="a1Count" min="0" step="1" value="0" placeholder="0">
+    <div class="tier-sep">×</div>
+    <input type="number" id="a1Days" min="0" step="0.5" value="0" placeholder="0">
+    <div class="tier-sep" style="font-size:0.7rem;">days</div>
+    <div id="a1Cost" class="tier-cost">$0.00</div>
+  </div>
+
+  <!-- Tier 2 — $500/day -->
+  <div class="artist-tier">
+    <div class="row-label">Artist — Tier 2<div class="sub">$500 / day &nbsp;·&nbsp; $62.50 / hr</div></div>
+    <input type="number" id="a2Count" min="0" step="1" value="0" placeholder="0">
+    <div class="tier-sep">×</div>
+    <input type="number" id="a2Days" min="0" step="0.5" value="0" placeholder="0">
+    <div class="tier-sep" style="font-size:0.7rem;">days</div>
+    <div id="a2Cost" class="tier-cost">$0.00</div>
+  </div>
+
+  <!-- Tier 3 — $600/day -->
+  <div class="artist-tier">
+    <div class="row-label">Artist — Tier 3<div class="sub">$600 / day &nbsp;·&nbsp; $75.00 / hr</div></div>
+    <input type="number" id="a3Count" min="0" step="1" value="0" placeholder="0">
+    <div class="tier-sep">×</div>
+    <input type="number" id="a3Days" min="0" step="0.5" value="0" placeholder="0">
+    <div class="tier-sep" style="font-size:0.7rem;">days</div>
+    <div id="a3Cost" class="tier-cost">$0.00</div>
+  </div>
+
+  <!-- Tier 4 — $1,000/day -->
+  <div class="artist-tier">
+    <div class="row-label">Artist — Tier 4<div class="sub">$1,000 / day &nbsp;·&nbsp; $125.00 / hr</div></div>
+    <input type="number" id="a4Count" min="0" step="1" value="0" placeholder="0">
+    <div class="tier-sep">×</div>
+    <input type="number" id="a4Days" min="0" step="0.5" value="0" placeholder="0">
+    <div class="tier-sep" style="font-size:0.7rem;">days</div>
+    <div id="a4Cost" class="tier-cost">$0.00</div>
+  </div>
+
+  <!-- Labor Totals -->
+  <hr class="section-divider">
+  <div class="totals-row">
+    <span class="t-label">Total Labor Cost</span>
+    <span id="totalLaborCost" class="t-value">$0.00</span>
+  </div>
+  <div class="totals-row" style="margin-top:4px;">
+    <span class="t-label">Total Labor Hours <span style="font-weight:400;text-transform:none;letter-spacing:0;">(Admin + Computer + Artist Hours)</span></span>
+    <span id="totalHours" class="t-value">0 hrs</span>
+  </div>
+</div>
+
+<!-- ═══ NO-PROFIT ITEMS ══════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title">No-Profit Items <span style="font-weight:400;text-transform:none;font-size:0.7rem;letter-spacing:0;color:var(--muted);">(pass-through costs — no markup)</span></div>
+  <div class="np-grid">
+    <div class="field-group">
+      <label>Permits</label>
+      <input type="number" id="npPermits" min="0" step="0.01" value="0" placeholder="$0.00">
+    </div>
+    <div class="field-group">
+      <label>Paint</label>
+      <input type="number" id="npPaint" min="0" step="0.01" value="0" placeholder="$0.00">
+    </div>
+    <div class="field-group">
+      <label>Supplies</label>
+      <input type="number" id="npSupplies" min="0" step="0.01" value="0" placeholder="$0.00">
+    </div>
+    <div class="field-group">
+      <label>Lift / Equipment Rental</label>
+      <input type="number" id="npLift" min="0" step="0.01" value="0" placeholder="$0.00">
+    </div>
+    <div class="field-group">
+      <label>Stencils / Patterns</label>
+      <input type="number" id="npStencils" min="0" step="0.01" value="0" placeholder="$0.00">
+    </div>
+    <div class="field-group">
+      <label>Miles</label>
+      <input type="number" id="npMiles" min="0" step="0.01" value="0" placeholder="$0.00">
+    </div>
+  </div>
+  <hr class="section-divider" style="margin-top:18px;">
+  <div class="totals-row">
+    <span class="t-label">Total No-Profit Pass-Through</span>
+    <span id="totalNoProfit" class="t-value">$0.00</span>
+  </div>
+</div>
+
+<!-- ═══ COST SUMMARY ═════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title">Cost Summary</div>
+  <div class="summary-grid">
+    <div class="summary-card sc-labor">
+      <div class="s-label">Total Labor Cost</div>
+      <div id="sumLaborCost" class="s-value">$0.00</div>
+    </div>
+    <div class="summary-card sc-hours">
+      <div class="s-label">Total Hours (for overhead)</div>
+      <div id="sumTotalHours" class="s-value">0</div>
+    </div>
+    <div class="summary-card sc-np">
+      <div class="s-label">No-Profit Pass-Through</div>
+      <div id="sumNoProfit" class="s-value">$0.00</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PRICING TIERS ════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title">Pricing Tiers</div>
+  <table class="pricing-table">
+    <thead>
+      <tr>
+        <th style="text-align:left;">Gross Margin</th>
+        <th>OH Rate</th>
+        <th>Labor ÷ (1−GM)</th>
+        <th>OH Cost (hrs × $90)</th>
+        <th>No-Profit</th>
+        <th>Sell Price</th>
+      </tr>
+    </thead>
+    <tbody id="pricingTbody">
+      <tr>
+        <td class="pricing-placeholder" colspan="6">Enter labor and costs above to see pricing tiers.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══ ACTIONS ══════════════════════════════════════════════════ -->
+<!-- Hidden file input for Load Job -->
+<input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileLoad(event)">
+
+<div class="actions no-print">
+  <button class="btn btn-reset" onclick="resetForm()">Reset Form</button>
+  <button class="btn btn-save"  onclick="saveJob()">&#8595; Save Job</button>
+  <button class="btn btn-load"  onclick="loadJob()">&#8593; Load Job</button>
+  <button class="btn btn-pdf"   onclick="exportPDF()">&#8681; Export to PDF</button>
+</div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────
+const ARTIST_TIERS = [
+  { id: 1, rate: 450  },
+  { id: 2, rate: 500  },
+  { id: 3, rate: 600  },
+  { id: 4, rate: 1000 },
+];
+
+// Overhead is calculated ONCE at the 40% GM rate ($90/hr) and is
+// the same dollar amount for all five pricing tiers (Chet's formula).
+const OVERHEAD_RATE = 90;
+
+const PRICING_TIERS = [
+  { gm: 0.20, label: '20%' },
+  { gm: 0.30, label: '30%' },
+  { gm: 0.40, label: '40%', highlight: true },
+  { gm: 0.50, label: '50%' },
+  { gm: 0.60, label: '60%' },
+];
+
+// ─── HELPERS ───────────────────────────────────────────────────────
+const fmt  = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtN = n => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+const val  = id => parseFloat(document.getElementById(id).value) || 0;
+const el   = id => document.getElementById(id);
+
+// ─── CALCULATE ─────────────────────────────────────────────────────
+function calculate() {
+
+  // Admin & Computer
+  const adminHrs  = val('adminHours');
+  const compHrs   = val('computerHours');
+  const adminCost = adminHrs * 50;
+  const compCost  = compHrs  * 35;
+  el('adminCost').textContent    = fmt(adminCost);
+  el('computerCost').textContent = fmt(compCost);
+
+  // Artist tiers
+  let artistCostTotal  = 0;
+  let artistHoursTotal = 0;
+  ARTIST_TIERS.forEach(tier => {
+    const count = val(`a${tier.id}Count`);
+    const days  = val(`a${tier.id}Days`);
+    const cost  = count * tier.rate * days;
+    const hours = count * days * 8;
+    el(`a${tier.id}Cost`).textContent = fmt(cost);
+    artistCostTotal  += cost;
+    artistHoursTotal += hours;
+  });
+
+  // Labor totals
+  const totalLabor = adminCost + compCost + artistCostTotal;
+  const totalHours = adminHrs  + compHrs  + artistHoursTotal;
+  el('totalLaborCost').textContent = fmt(totalLabor);
+  el('totalHours').textContent     = fmtN(totalHours) + ' hrs';
+
+  // No-profit — all plain dollar values now (including miles)
+  const totalNP = val('npPermits') + val('npPaint') + val('npSupplies')
+                + val('npLift')    + val('npStencils') + val('npMiles');
+  el('totalNoProfit').textContent = fmt(totalNP);
+
+  // Summary cards
+  el('sumLaborCost').textContent  = fmt(totalLabor);
+  el('sumTotalHours').textContent = fmtN(totalHours);
+  el('sumNoProfit').textContent   = fmt(totalNP);
+
+  // Pricing table
+  renderPricingTable(totalLabor, totalHours, totalNP);
+}
+
+// ─── PRICING TABLE ──────────────────────────────────────────────────
+function renderPricingTable(labor, hours, noProfit) {
+  const tbody = el('pricingTbody');
+
+  if (labor === 0 && noProfit === 0) {
+    tbody.innerHTML = `<tr><td class="pricing-placeholder" colspan="6">Enter labor and costs above to see pricing tiers.</td></tr>`;
+    return;
+  }
+
+  // Overhead: fixed once at $90/hr for ALL tiers
+  const fixedOverhead = hours * OVERHEAD_RATE;
+
+  tbody.innerHTML = PRICING_TIERS.map(tier => {
+    const laborDiv  = labor / (1 - tier.gm);
+    const sellPrice = laborDiv + fixedOverhead + noProfit;
+    const hlClass   = tier.highlight ? ' class="hl"' : '';
+    const badge     = tier.highlight ? '<span class="badge">Recommended</span>' : '';
+    return `
+      <tr${hlClass}>
+        <td>${tier.label}${badge}</td>
+        <td>$${OVERHEAD_RATE}/hr</td>
+        <td>${fmt(laborDiv)}</td>
+        <td>${fmt(fixedOverhead)}</td>
+        <td>${fmt(noProfit)}</td>
+        <td><strong>${fmt(sellPrice)}</strong></td>
+      </tr>`;
+  }).join('');
+}
+
+// ─── SAVE / LOAD JOB ───────────────────────────────────────────────
+const TEXT_FIELDS   = ['jobName','jobAddress','contactName','contactPhone','contactEmail'];
+const NUMBER_FIELDS = [
+  'adminHours','computerHours',
+  'a1Count','a1Days','a2Count','a2Days','a3Count','a3Days','a4Count','a4Days',
+  'npPermits','npPaint','npSupplies','npLift','npStencils','npMiles',
+];
+
+function buildJobData() {
+  const data = { _version: '1.1', _saved: new Date().toISOString() };
+  TEXT_FIELDS.forEach(id   => { data[id] = el(id).value; });
+  NUMBER_FIELDS.forEach(id => { data[id] = val(id); });
+  return data;
+}
+
+function downloadJSON(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function safeFilename(str) {
+  return (str || 'Job').replace(/[^a-z0-9\-]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+}
+
+function saveJob() {
+  const jobName  = el('jobName').value.trim() || 'Unnamed_Job';
+  const dateFile = new Date().toISOString().slice(0, 10);
+  downloadJSON(buildJobData(), `${safeFilename(jobName)}_${dateFile}.json`);
+}
+
+function loadJob() {
+  el('fileInput').click();
+}
+
+function handleFileLoad(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      TEXT_FIELDS.forEach(id   => { if (data[id] !== undefined) el(id).value = data[id]; });
+      NUMBER_FIELDS.forEach(id => { if (data[id] !== undefined) el(id).value = data[id]; });
+      calculate();
+      event.target.value = ''; // allow re-loading same file
+    } catch(err) {
+      alert('Could not load this file.\nMake sure it is a valid PPAG job JSON file.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─── RESET ─────────────────────────────────────────────────────────
+function resetForm() {
+  if (!confirm('Reset all fields? This cannot be undone.')) return;
+  TEXT_FIELDS.forEach(id   => { el(id).value = ''; });
+  NUMBER_FIELDS.forEach(id => { el(id).value = 0;  });
+  calculate();
+}
+
+// ─── PDF EXPORT (jsPDF — direct download, no print dialog) ─────────
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+
+  const W        = doc.internal.pageSize.getWidth();  // 215.9 mm
+  const M        = 14;                                 // page margin
+  const now      = new Date();
+  const dateStr  = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const dateFile = now.toISOString().slice(0, 10);
+  const jobName  = el('jobName').value.trim() || 'Unnamed Job';
+  let y = 0;
+
+  // ── Header bar ─────────────────────────────────────────────────
+  doc.setFillColor(26, 58, 92);
+  doc.rect(0, 0, W, 27, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('Billboard & Handpainting Cost Estimate', M, 11);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(180, 210, 240);
+  doc.text('Painted Pieces Art Group  ·  Job Cost Estimator', M, 19);
+  doc.text('Generated: ' + dateStr, W - M, 19, { align: 'right' });
+
+  y = 33;
+
+  // ── Section heading helper ─────────────────────────────────────
+  function sectionHead(title) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(46, 109, 164);
+    doc.text(title, M, y);
+    y += 1.5;
+    doc.setDrawColor(200, 220, 240);
+    doc.setLineWidth(0.35);
+    doc.line(M, y, W - M, y);
+    y += 4;
+    doc.setTextColor(30, 43, 58);
+  }
+
+  // ── Job Details ────────────────────────────────────────────────
+  sectionHead('JOB DETAILS');
+  const contact = [el('contactPhone').value, el('contactEmail').value].filter(Boolean).join('  ·  ') || '—';
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['Job Name', 'Address', 'Contact', 'Phone / Email']],
+    body: [[
+      el('jobName').value    || '—',
+      el('jobAddress').value || '—',
+      el('contactName').value || '—',
+      contact,
+    ]],
+    styles:     { fontSize: 8.5, cellPadding: [2.5, 3] },
+    headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
+    theme: 'plain',
+    tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Labor ──────────────────────────────────────────────────────
+  sectionHead('LABOR');
+  const adminHrs = val('adminHours');
+  const compHrs  = val('computerHours');
+  const laborRows = [];
+
+  if (adminHrs > 0)
+    laborRows.push(['Admin', adminHrs + ' hrs × $50/hr', fmt(adminHrs * 50)]);
+  if (compHrs > 0)
+    laborRows.push(['Computer / Design', compHrs + ' hrs × $35/hr', fmt(compHrs * 35)]);
+
+  ARTIST_TIERS.forEach(tier => {
+    const count = val(`a${tier.id}Count`);
+    const days  = val(`a${tier.id}Days`);
+    if (count > 0 || days > 0) {
+      laborRows.push([
+        `Artist Tier ${tier.id}  ($${tier.rate}/day)`,
+        `${count} artist${count !== 1 ? 's' : ''} × ${days} day${days !== 1 ? 's' : ''}`,
+        fmt(count * tier.rate * days),
+      ]);
+    }
+  });
+  if (laborRows.length === 0) laborRows.push(['(no labor entered)', '', '$0.00']);
+
+  // Totals rows
+  const totalLabor = val('adminHours') * 50 + val('computerHours') * 35
+    + ARTIST_TIERS.reduce((s, t) => s + val(`a${t.id}Count`) * t.rate * val(`a${t.id}Days`), 0);
+  const totalHours = val('adminHours') + val('computerHours')
+    + ARTIST_TIERS.reduce((s, t) => s + val(`a${t.id}Count`) * val(`a${t.id}Days`) * 8, 0);
+
+  laborRows.push(['', 'Total Labor Cost', fmt(totalLabor)]);
+  laborRows.push(['', 'Total Hours (for overhead)', fmtN(totalHours) + ' hrs']);
+
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['Description', 'Calculation', 'Cost']],
+    body: laborRows,
+    styles:     { fontSize: 8.5, cellPadding: [2.5, 3] },
+    headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
+    columnStyles: { 0: { cellWidth: 75 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 32, halign: 'right' } },
+    didParseCell: data => {
+      if (data.section === 'body' && data.row.index >= laborRows.length - 2) {
+        data.cell.styles.fontStyle  = 'bold';
+        data.cell.styles.fillColor  = [240, 247, 255];
+      }
+    },
+    theme: 'plain',
+    tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── No-Profit ──────────────────────────────────────────────────
+  sectionHead('NO-PROFIT PASS-THROUGH COSTS');
+  const npDefs = [
+    ['Permits',               val('npPermits')],
+    ['Paint',                 val('npPaint')],
+    ['Supplies',              val('npSupplies')],
+    ['Lift / Equipment',      val('npLift')],
+    ['Stencils / Patterns',   val('npStencils')],
+    ['Miles',                 val('npMiles')],
+  ];
+  const totalNP = npDefs.reduce((s, [, v]) => s + v, 0);
+  const npRows  = npDefs.filter(([, v]) => v > 0).map(([k, v]) => [k, fmt(v)]);
+  if (npRows.length === 0) npRows.push(['(none entered)', '—']);
+  npRows.push(['Total No-Profit', fmt(totalNP)]);
+
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['Item', 'Amount']],
+    body: npRows,
+    styles:     { fontSize: 8.5, cellPadding: [2.5, 3] },
+    headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 35, halign: 'right' } },
+    didParseCell: data => {
+      if (data.section === 'body' && data.row.index === npRows.length - 1) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [240, 247, 255];
+      }
+    },
+    theme: 'plain',
+    tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Pricing Tiers ──────────────────────────────────────────────
+  sectionHead('PRICING TIERS');
+  const fixedOH = totalHours * OVERHEAD_RATE;
+
+  const pricingRows = PRICING_TIERS.map(t => {
+    const laborDiv  = totalLabor / (1 - t.gm);
+    const sellPrice = laborDiv + fixedOH + totalNP;
+    return [
+      t.label + (t.highlight ? '  ★ Recommended' : ''),
+      '$' + OVERHEAD_RATE + '/hr',
+      fmt(laborDiv),
+      fmt(fixedOH),
+      fmt(totalNP),
+      fmt(sellPrice),
+    ];
+  });
+
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['GM %', 'OH Rate', 'Labor ÷ (1−GM)', 'OH Cost', 'No-Profit', 'Sell Price']],
+    body: pricingRows,
+    styles:     { fontSize: 8.5, cellPadding: [2.5, 3], halign: 'right' },
+    headStyles: { fillColor: [26, 58, 92], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+    columnStyles: { 0: { halign: 'left' } },
+    didParseCell: data => {
+      if (data.section === 'body' && data.row.index === 2) {   // 40% row
+        data.cell.styles.fillColor  = [255, 248, 225];
+        data.cell.styles.fontStyle  = 'bold';
+        if (data.column.index === 5) data.cell.styles.textColor = [22, 100, 60];
+      }
+    },
+    theme: 'plain',
+    tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 7;
+
+  // ── Footer ─────────────────────────────────────────────────────
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(160, 160, 160);
+  doc.text('This estimate is prepared by Painted Pieces Art Group. All prices subject to final agreement.', M, y);
+
+  // ── Save PDF ───────────────────────────────────────────────────
+  const safe = safeFilename(jobName);
+  doc.save(`${safe}_Quote_${dateFile}.pdf`);
+
+  // ── Also auto-save JSON data file ─────────────────────────────
+  setTimeout(() => downloadJSON(buildJobData(), `${safe}_${dateFile}.json`), 400);
+}
+
+// ─── BIND ALL INPUTS (exclude file picker) ─────────────────────────
+document.querySelectorAll('input:not([type="file"])').forEach(input => {
+  input.addEventListener('input', calculate);
+});
+
+// Initial render
+calculate();
+</script>
+// Register service worker for offline functionality
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/billboard-calculator/sw.js')
+      .then(reg => console.log('✓ Service Worker registered'))
+      .catch(err => console.log('✗ Service Worker failed:', err));
+  });
+}
+</script>
+</body>
+</html>
