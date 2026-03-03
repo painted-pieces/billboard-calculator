@@ -4,20 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Billboard &amp; Handpainting Costing Calculator — PPAG</title>
-  <!-- PWA Manifest -->
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2d5a7b">
+  <meta name="theme-color" content="#1a3a5c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Billboard Calc">
+  <meta name="apple-mobile-web-app-title" content="PPAG Costing">
   <link rel="apple-touch-icon" href="icon-192.png">
-
-  <!-- jsPDF + autoTable for direct PDF download (no print dialog) -->
+  <!-- jsPDF + autoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    /* ─── DESIGN TOKENS ─────────────────────────────────────────── */
+    /* ─── TOKENS ─────────────────────────────────────────────────── */
     :root {
       --primary:      #1a3a5c;
       --accent:       #2e6da4;
@@ -32,9 +31,16 @@
       --bg:           #eef2f7;
       --green:        #1a6e42;
       --green-dark:   #145533;
+      --green-bg:     #e8f5ee;
+      --red:          #e74c3c;
+      --red-bg:       rgba(231,76,60,0.07);
+      --under:        #27ae60;
+      --under-bg:     rgba(39,174,96,0.07);
+      --amber:        #d4800a;
+      --amber-bg:     rgba(212,128,10,0.07);
     }
 
-    /* ─── RESET & BASE ──────────────────────────────────────────── */
+    /* ─── BASE ───────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-size: 15px; }
     body {
@@ -47,40 +53,124 @@
       margin: 0 auto;
     }
 
-    /* ─── APP HEADER ────────────────────────────────────────────── */
+    /* ─── HEADER ─────────────────────────────────────────────────── */
     .app-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: linear-gradient(135deg, var(--primary) 0%, #244f7a 100%);
       color: white;
-      padding: 22px 30px;
+      padding: 18px 28px;
       border-radius: 14px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       box-shadow: 0 6px 20px rgba(26,58,92,0.25);
+      gap: 16px;
+      flex-wrap: wrap;
     }
-    .app-header h1 {
-      font-size: 1.45rem;
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .header-logo {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      font-size: 1.3rem;
       font-weight: 800;
-      letter-spacing: -0.4px;
+      letter-spacing: -0.3px;
       line-height: 1.2;
     }
-    .app-header .sub {
-      font-size: 0.8rem;
+    .header-text .sub {
+      font-size: 0.76rem;
       opacity: 0.7;
-      margin-top: 4px;
-      letter-spacing: 0.2px;
+      margin-top: 3px;
     }
-    .header-right { text-align: right; }
-    .header-badge {
-      font-size: 2.2rem;
-      font-weight: 900;
-      color: rgba(255,255,255,0.12);
-      letter-spacing: -2px;
-      line-height: 1;
+    /* Document-type toggle */
+    .doc-type-toggle {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+    }
+    .doc-type-label {
+      font-size: 0.63rem;
+      opacity: 0.65;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      font-weight: 600;
+    }
+    .toggle-btns {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.1);
+      padding: 4px;
+      border-radius: 9px;
+    }
+    .toggle-btn {
+      padding: 7px 18px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.75);
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      transition: all 0.18s;
+      font-family: inherit;
+      letter-spacing: 0.1px;
+    }
+    .toggle-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .toggle-btn:hover:not(.active) {
+      background: rgba(255,255,255,0.18);
+      color: white;
+    }
+    @media (max-width: 640px) {
+      .header-logo { height: 34px; }
+      .header-text h1 { font-size: 1.05rem; }
     }
 
-    /* ─── CARD ──────────────────────────────────────────────────── */
+    /* ─── ACTUAL MODE BANNER ─────────────────────────────────────── */
+    .actual-banner {
+      display: none;
+      background: linear-gradient(135deg, #1a5c3a, #228b55);
+      color: white;
+      padding: 13px 22px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      border-left: 5px solid #2ecc71;
+    }
+    .actual-banner.show { display: flex; }
+    .ab-tag {
+      font-weight: 800;
+      font-size: 0.8rem;
+      letter-spacing: 0.6px;
+      background: rgba(255,255,255,0.2);
+      padding: 3px 11px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+    .ab-info { font-size: 0.84rem; opacity: 0.95; }
+    .ab-info strong { font-weight: 800; }
+    .ab-hint {
+      font-size: 0.72rem;
+      opacity: 0.7;
+      margin-left: auto;
+      font-style: italic;
+    }
+    @media (max-width: 640px) { .ab-hint { display: none; } }
+
+    /* ─── CARD ───────────────────────────────────────────────────── */
     .card {
       background: var(--card);
       border-radius: 12px;
@@ -112,12 +202,12 @@
       flex-shrink: 0;
     }
 
-    /* ─── GRIDS ─────────────────────────────────────────────────── */
+    /* ─── GRIDS ──────────────────────────────────────────────────── */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 
-    /* ─── FORM FIELDS ───────────────────────────────────────────── */
-    .field-group { display: flex; flex-direction: column; gap: 5px; }
+    /* ─── FORM FIELDS ────────────────────────────────────────────── */
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
     label {
       font-size: 0.68rem;
       font-weight: 700;
@@ -136,7 +226,7 @@
       color: var(--text);
       background: white;
       width: 100%;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
       font-family: inherit;
     }
     input:focus {
@@ -146,7 +236,50 @@
     }
     input[type="number"] { text-align: right; }
 
-    /* ─── LABOR ROWS (Admin / Computer) ─────────────────────────── */
+    /* ─── CHANGE HIGHLIGHTING ON INPUTS ──────────────────────────── */
+    input.field-over  {
+      border-left: 3.5px solid var(--red) !important;
+      background: var(--red-bg) !important;
+    }
+    input.field-under {
+      border-left: 3.5px solid var(--under) !important;
+      background: var(--under-bg) !important;
+    }
+    input.field-text-changed {
+      border-left: 3.5px solid var(--amber) !important;
+      background: var(--amber-bg) !important;
+    }
+
+    /* ─── INPUT CELL (for artist tier inputs without field-group) ── */
+    .input-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    /* ─── CHANGE INDICATOR (below inputs) ────────────────────────── */
+    .chg-ind {
+      display: none;
+      font-size: 0.6rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chg-ind.chg-over  { display: flex; background: rgba(231,76,60,0.12); color: #b03a2e; }
+    .chg-ind.chg-under { display: flex; background: rgba(39,174,96,0.12); color: #1a7a42; }
+    .chg-ind.chg-text  { display: flex; background: rgba(212,128,10,0.12); color: #9a6200; }
+    .chg-est  { opacity: 0.65; }
+    .chg-arr  { opacity: 0.4; flex-shrink: 0; }
+    .chg-act  { font-weight: 700; }
+    .chg-diff { font-weight: 800; margin-left: 2px; }
+
+    /* ─── LABOR ROWS ─────────────────────────────────────────────── */
     .labor-col-header {
       display: grid;
       grid-template-columns: 1fr 130px 130px 110px;
@@ -163,12 +296,11 @@
       text-align: right;
     }
     .labor-col-header span:first-child { text-align: left; }
-
     .labor-row {
       display: grid;
       grid-template-columns: 1fr 130px 130px 110px;
       gap: 12px;
-      align-items: center;
+      align-items: start;
       background: var(--highlight);
       border: 1px solid #dce8f6;
       border-radius: 9px;
@@ -176,28 +308,12 @@
       margin-bottom: 8px;
     }
     .labor-row:last-child { margin-bottom: 0; }
-    .row-label { font-size: 0.875rem; font-weight: 600; }
-    .row-label .sub {
-      font-size: 0.72rem;
-      color: var(--muted);
-      font-weight: 400;
-      margin-top: 1px;
-    }
-    .row-rate {
-      text-align: right;
-      font-size: 0.82rem;
-      color: var(--muted);
-      font-weight: 500;
-      padding-right: 4px;
-    }
-    .row-cost {
-      text-align: right;
-      font-weight: 700;
-      font-size: 0.92rem;
-      color: var(--accent);
-    }
+    .row-label { font-size: 0.875rem; font-weight: 600; padding-top: 8px; }
+    .row-label .sub { font-size: 0.72rem; color: var(--muted); font-weight: 400; margin-top: 1px; }
+    .row-rate { text-align: right; font-size: 0.82rem; color: var(--muted); font-weight: 500; padding-top: 8px; }
+    .row-cost { text-align: right; font-weight: 700; font-size: 0.92rem; color: var(--accent); padding-top: 8px; }
 
-    /* ─── ARTIST TIERS ──────────────────────────────────────────── */
+    /* ─── ARTIST TIERS ───────────────────────────────────────────── */
     .artist-section-label {
       font-size: 0.65rem;
       font-weight: 800;
@@ -219,7 +335,7 @@
       display: grid;
       grid-template-columns: 1fr 110px 22px 100px 40px 110px;
       gap: 10px;
-      align-items: center;
+      align-items: start;
       background: var(--highlight);
       border: 1px solid #dce8f6;
       border-radius: 9px;
@@ -227,82 +343,112 @@
       margin-bottom: 8px;
     }
     .artist-tier:last-child { margin-bottom: 0; }
-    .tier-sep {
-      text-align: center;
-      font-size: 0.78rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
-    .tier-cost {
-      text-align: right;
-      font-weight: 700;
-      font-size: 0.92rem;
-      color: var(--accent);
-    }
+    .tier-sep { text-align: center; font-size: 0.78rem; color: var(--muted); font-weight: 600; padding-top: 8px; }
+    .tier-cost { text-align: right; font-weight: 700; font-size: 0.92rem; color: var(--accent); padding-top: 8px; }
 
-    /* ─── DIVIDERS & TOTALS ─────────────────────────────────────── */
-    .section-divider {
-      border: none;
-      border-top: 2px dashed var(--border);
-      margin: 18px 0 14px;
-    }
-    .totals-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 3px 2px;
-    }
-    .t-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .t-value {
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: var(--text);
-    }
+    /* ─── DIVIDERS & TOTALS ──────────────────────────────────────── */
+    .section-divider { border: none; border-top: 2px dashed var(--border); margin: 18px 0 14px; }
+    .totals-row { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 2px; }
+    .t-label { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+    .t-value { font-size: 1.05rem; font-weight: 800; color: var(--text); }
 
-    /* ─── NO-PROFIT GRID ────────────────────────────────────────── */
+    /* ─── NO-PROFIT GRID ─────────────────────────────────────────── */
     .np-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 
-    /* ─── SUMMARY CARDS ─────────────────────────────────────────── */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-    .summary-card {
-      padding: 18px 20px 20px;
-      border-radius: 11px;
-      color: white;
-    }
+    /* ─── COST SUMMARY CARDS ─────────────────────────────────────── */
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .summary-card { padding: 18px 20px 20px; border-radius: 11px; color: white; }
     .summary-card .s-label {
-      font-size: 0.67rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-      opacity: 0.72;
-      margin-bottom: 8px;
+      font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.7px; opacity: 0.72; margin-bottom: 8px;
     }
-    .summary-card .s-value {
-      font-size: 1.7rem;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-      line-height: 1;
-    }
+    .summary-card .s-value { font-size: 1.7rem; font-weight: 900; letter-spacing: -0.5px; line-height: 1; }
     .sc-labor { background: linear-gradient(135deg, #1a3a5c 0%, #2e6da4 100%); }
     .sc-hours { background: linear-gradient(135deg, #1a5c3a 0%, #2e9e6a 100%); }
     .sc-np    { background: linear-gradient(135deg, #5c3a1a 0%, #a0682a 100%); }
 
-    /* ─── PRICING TABLE ─────────────────────────────────────────── */
-    .pricing-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
+    /* ─── VARIANCE / COMPARISON SECTION ──────────────────────────── */
+    .variance-card {
+      border-left: 5px solid #3498db;
+      background: linear-gradient(160deg, #f5f8fc 0%, #edf2f9 100%);
     }
+    .variance-card .card-title { color: #2471a3; }
+    .variance-card .card-title::before { background: #2471a3; }
+    .var-overview {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .var-stat {
+      background: white;
+      padding: 16px 14px;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .var-stat.var-hl {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    .var-stat-label {
+      font-size: 0.64rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .var-hl .var-stat-label { color: rgba(255,255,255,0.6); }
+    .var-stat-value { font-size: 1.55rem; font-weight: 900; color: var(--text); line-height: 1; }
+    .var-hl .var-stat-value { color: white; }
+    .var-pct { font-size: 0.82rem; margin-top: 5px; font-weight: 600; }
+    .v-over  { color: #c0392b !important; }
+    .v-under { color: #1a7a42 !important; }
+
+    .changes-hdr {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      margin-top: 2px;
+    }
+    .chg-list { display: flex; flex-direction: column; gap: 6px; }
+    .chg-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.835rem;
+      flex-wrap: wrap;
+    }
+    .chg-row.chg-over  { border-left: 3px solid var(--red); }
+    .chg-row.chg-under { border-left: 3px solid var(--under); }
+    .cr-field  { font-weight: 600; flex: 1 1 auto; min-width: 120px; }
+    .cr-est    { opacity: 0.55; white-space: nowrap; }
+    .cr-arr    { opacity: 0.35; flex-shrink: 0; }
+    .cr-act    { font-weight: 700; white-space: nowrap; }
+    .cr-impact { font-weight: 800; white-space: nowrap; margin-left: auto; }
+    .cr-impact.over  { color: #c0392b; }
+    .cr-impact.under { color: #1a7a42; }
+    .no-changes {
+      text-align: center;
+      color: var(--green);
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 16px;
+      background: var(--green-bg);
+      border-radius: 8px;
+    }
+
+    /* ─── PRICING TABLE ──────────────────────────────────────────── */
+    .pricing-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
     .pricing-table thead th {
       background: var(--primary);
       color: white;
@@ -314,11 +460,7 @@
       font-weight: 700;
     }
     .pricing-table thead th:first-child { text-align: left; }
-    .pricing-table tbody td {
-      padding: 11px 16px;
-      border-bottom: 1px solid var(--border);
-      text-align: right;
-    }
+    .pricing-table tbody td { padding: 11px 16px; border-bottom: 1px solid var(--border); text-align: right; }
     .pricing-table tbody td:first-child { text-align: left; }
     .pricing-table tbody tr:hover td { background: #f5f8fc; }
     .pricing-table .hl td {
@@ -327,10 +469,7 @@
       border-top: 2px solid var(--gold);
       border-bottom: 2px solid var(--gold);
     }
-    .pricing-table .hl td:last-child {
-      color: var(--green);
-      font-size: 1.05rem;
-    }
+    .pricing-table .hl td:last-child { color: var(--green); font-size: 1.05rem; }
     .badge {
       display: inline-block;
       background: var(--gold);
@@ -354,7 +493,7 @@
       font-size: 0.875rem;
     }
 
-    /* ─── BUTTONS ───────────────────────────────────────────────── */
+    /* ─── BUTTONS ────────────────────────────────────────────────── */
     .actions {
       display: flex;
       gap: 10px;
@@ -374,121 +513,153 @@
       letter-spacing: 0.1px;
       white-space: nowrap;
     }
-    .btn-reset {
-      background: white;
-      color: var(--muted);
-      border: 1.5px solid var(--border);
-    }
+    .btn-reset { background: white; color: var(--muted); border: 1.5px solid var(--border); }
     .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-save { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(26,110,66,0.22); }
+    .btn-save:hover { background: var(--green-dark); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(26,110,66,0.32); }
+    .btn-load { background: white; color: var(--accent); border: 1.5px solid var(--accent); }
+    .btn-load:hover { background: var(--highlight); transform: translateY(-1px); }
+    .btn-pdf { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(46,109,164,0.25); }
+    .btn-pdf:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 5px 16px rgba(46,109,164,0.35); }
 
-    .btn-save {
-      background: var(--green);
-      color: white;
-      box-shadow: 0 2px 8px rgba(26,110,66,0.22);
+    /* ─── MODAL ──────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
     }
-    .btn-save:hover {
-      background: var(--green-dark);
-      transform: translateY(-1px);
-      box-shadow: 0 5px 14px rgba(26,110,66,0.32);
-    }
-
-    .btn-load {
+    .modal-overlay.show { display: flex; }
+    .modal-box {
       background: white;
-      color: var(--accent);
-      border: 1.5px solid var(--accent);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.25);
     }
-    .btn-load:hover {
-      background: var(--highlight);
-      transform: translateY(-1px);
+    .modal-box h3 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 6px;
     }
+    .modal-job  { font-weight: 800; color: var(--accent); font-size: 1.05rem; margin-bottom: 4px; }
+    .modal-date { color: var(--muted); font-size: 0.8rem; margin-bottom: 0; }
+    .modal-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .modal-prompt { font-size: 0.88rem; color: var(--text); margin-bottom: 18px; line-height: 1.6; }
+    .modal-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-opt {
+      padding: 18px 14px;
+      border-radius: 11px;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      background: white;
+      text-align: left;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .modal-opt:hover { border-color: var(--accent); background: var(--highlight); }
+    .modal-opt.primary { border-color: var(--accent); background: var(--accent); color: white; }
+    .modal-opt.primary:hover { background: var(--accent-dark); }
+    .opt-icon  { font-size: 1.6rem; margin-bottom: 8px; }
+    .opt-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 5px; }
+    .opt-desc  { font-size: 0.74rem; opacity: 0.75; line-height: 1.4; }
+    .modal-opt.primary .opt-desc { opacity: 0.85; }
 
-    .btn-pdf {
-      background: var(--accent);
-      color: white;
-      box-shadow: 0 2px 8px rgba(46,109,164,0.25);
-    }
-    .btn-pdf:hover {
-      background: var(--accent-dark);
-      transform: translateY(-1px);
-      box-shadow: 0 5px 16px rgba(46,109,164,0.35);
-    }
-
-    /* ─── PRINT (manual Ctrl+P fallback) ───────────────────────── */
+    /* ─── PRINT ──────────────────────────────────────────────────── */
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       html { font-size: 12px; }
       body { background: white; padding: 0; max-width: 100%; }
       .no-print { display: none !important; }
       .card { box-shadow: none; border-radius: 6px; margin-bottom: 12px; padding: 16px 18px; break-inside: avoid; }
-      .sc-labor { background: linear-gradient(135deg, #1a3a5c 0%, #2e6da4 100%) !important; }
-      .sc-hours { background: linear-gradient(135deg, #1a5c3a 0%, #2e9e6a 100%) !important; }
-      .sc-np    { background: linear-gradient(135deg, #5c3a1a 0%, #a0682a 100%) !important; }
-      .pricing-table thead th { -webkit-print-color-adjust: exact !important; }
+      .sc-labor, .sc-hours, .sc-np, .variance-card { -webkit-print-color-adjust: exact !important; }
       @page { margin: 14mm 12mm; size: letter portrait; }
     }
   </style>
 </head>
 <body>
 
-<!-- ═══ HEADER ═══════════════════════════════════════════════════ -->
+<!-- ═══ HEADER ══════════════════════════════════════════════════════ -->
 <header class="app-header">
-  <div>
-    <h1>Billboard &amp; Handpainting Costing Calculator</h1>
-    <div class="sub">Painted Pieces Art Group &nbsp;·&nbsp; Job Cost Estimator</div>
+  <div class="header-left">
+    <img src="PPAG_CAL_LOGO1.png" alt="Painted Pieces Art &amp; Graphics" class="header-logo"
+         onerror="this.style.display='none'">
+    <div class="header-text">
+      <h1>Billboard &amp; Handpainting</h1>
+      <div class="sub">Painted Pieces Art Group &nbsp;·&nbsp; Cost Calculator</div>
+    </div>
   </div>
-  <div class="header-right">
-    <div class="header-badge">PPAG</div>
+  <div class="doc-type-toggle">
+    <span class="doc-type-label">Document Type</span>
+    <div class="toggle-btns">
+      <button class="toggle-btn active" id="btnEstimate" onclick="handleModeToggle('estimate')">📋 Estimate</button>
+      <button class="toggle-btn"        id="btnActual"   onclick="handleModeToggle('actual')">✓ Actual</button>
+    </div>
   </div>
 </header>
 
-<!-- ═══ JOB DETAILS ══════════════════════════════════════════════ -->
+<!-- ═══ ACTUAL MODE BANNER ══════════════════════════════════════════ -->
+<div class="actual-banner" id="actualBanner">
+  <span class="ab-tag">✓ ACTUAL COSTS MODE</span>
+  <span class="ab-info">Based on estimate: <strong id="abJobName">—</strong></span>
+  <span class="ab-hint">Update fields with real numbers — changes highlight automatically</span>
+</div>
+
+<!-- ═══ JOB DETAILS ═════════════════════════════════════════════════ -->
 <div class="card">
   <div class="card-title">Job Details</div>
   <div class="grid-2" style="margin-bottom:14px;">
     <div class="field-group">
       <label>Job Name</label>
       <input type="text" id="jobName" placeholder="e.g. Main St Billboard — Acme Co.">
+      <div class="chg-ind" id="ind-jobName"></div>
     </div>
     <div class="field-group">
       <label>Address / Location</label>
       <input type="text" id="jobAddress" placeholder="e.g. 123 Main St, Anytown, CA">
+      <div class="chg-ind" id="ind-jobAddress"></div>
     </div>
   </div>
   <div class="grid-3">
     <div class="field-group">
       <label>Contact Name</label>
       <input type="text" id="contactName" placeholder="Full Name">
+      <div class="chg-ind" id="ind-contactName"></div>
     </div>
     <div class="field-group">
       <label>Phone</label>
       <input type="tel" id="contactPhone" placeholder="(555) 000-0000">
+      <div class="chg-ind" id="ind-contactPhone"></div>
     </div>
     <div class="field-group">
       <label>Email</label>
       <input type="email" id="contactEmail" placeholder="email@example.com">
+      <div class="chg-ind" id="ind-contactEmail"></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ LABOR ═════════════════════════════════════════════════════ -->
+<!-- ═══ LABOR ════════════════════════════════════════════════════════ -->
 <div class="card">
   <div class="card-title">Labor</div>
 
   <div class="labor-col-header">
-    <span>Description</span>
-    <span>Hours</span>
-    <span>Rate</span>
-    <span>Cost</span>
+    <span>Description</span><span>Hours</span><span>Rate</span><span>Cost</span>
   </div>
 
   <!-- Admin -->
   <div class="labor-row">
-    <div class="row-label">
-      Admin
-      <div class="sub">$50.00 / hour</div>
-    </div>
+    <div class="row-label">Admin<div class="sub">$50.00 / hour</div></div>
     <div class="field-group">
       <input type="number" id="adminHours" min="0" step="0.5" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-adminHours"></div>
     </div>
     <div class="row-rate">$50.00 / hr</div>
     <div id="adminCost" class="row-cost">$0.00</div>
@@ -496,70 +667,91 @@
 
   <!-- Computer -->
   <div class="labor-row">
-    <div class="row-label">
-      Computer / Design
-      <div class="sub">$35.00 / hour</div>
-    </div>
+    <div class="row-label">Computer / Design<div class="sub">$35.00 / hour</div></div>
     <div class="field-group">
       <input type="number" id="computerHours" min="0" step="0.5" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-computerHours"></div>
     </div>
     <div class="row-rate">$35.00 / hr</div>
     <div id="computerCost" class="row-cost">$0.00</div>
   </div>
 
-  <!-- Artist Tiers -->
+  <!-- Artist tiers -->
   <div class="artist-section-label">Artists — Day Rate Pricing</div>
 
   <div style="display:grid; grid-template-columns:1fr 110px 22px 100px 40px 110px; gap:10px; padding:3px 14px 6px; margin-bottom:2px;">
-    <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">Tier</span>
-    <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;"># Artists</span>
+    <span style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);">Tier</span>
+    <span style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;"># Artists</span>
     <span></span>
-    <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;"># Days</span>
+    <span style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;"># Days</span>
     <span></span>
-    <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;">Cost</span>
+    <span style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:right;">Cost</span>
   </div>
 
-  <!-- Tier 1 — $450/day -->
+  <!-- Tier 1 — $450 -->
   <div class="artist-tier">
     <div class="row-label">Artist — Tier 1<div class="sub">$450 / day &nbsp;·&nbsp; $56.25 / hr</div></div>
-    <input type="number" id="a1Count" min="0" step="1" value="0" placeholder="0">
+    <div class="input-cell">
+      <input type="number" id="a1Count" min="0" step="1" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-a1Count"></div>
+    </div>
     <div class="tier-sep">×</div>
-    <input type="number" id="a1Days" min="0" step="0.5" value="0" placeholder="0">
-    <div class="tier-sep" style="font-size:0.7rem;">days</div>
+    <div class="input-cell">
+      <input type="number" id="a1Days" min="0" step="0.5" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-a1Days"></div>
+    </div>
+    <div class="tier-sep" style="font-size:.7rem;">days</div>
     <div id="a1Cost" class="tier-cost">$0.00</div>
   </div>
 
-  <!-- Tier 2 — $500/day -->
+  <!-- Tier 2 — $500 -->
   <div class="artist-tier">
     <div class="row-label">Artist — Tier 2<div class="sub">$500 / day &nbsp;·&nbsp; $62.50 / hr</div></div>
-    <input type="number" id="a2Count" min="0" step="1" value="0" placeholder="0">
+    <div class="input-cell">
+      <input type="number" id="a2Count" min="0" step="1" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-a2Count"></div>
+    </div>
     <div class="tier-sep">×</div>
-    <input type="number" id="a2Days" min="0" step="0.5" value="0" placeholder="0">
-    <div class="tier-sep" style="font-size:0.7rem;">days</div>
+    <div class="input-cell">
+      <input type="number" id="a2Days" min="0" step="0.5" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-a2Days"></div>
+    </div>
+    <div class="tier-sep" style="font-size:.7rem;">days</div>
     <div id="a2Cost" class="tier-cost">$0.00</div>
   </div>
 
-  <!-- Tier 3 — $600/day -->
+  <!-- Tier 3 — $600 -->
   <div class="artist-tier">
     <div class="row-label">Artist — Tier 3<div class="sub">$600 / day &nbsp;·&nbsp; $75.00 / hr</div></div>
-    <input type="number" id="a3Count" min="0" step="1" value="0" placeholder="0">
+    <div class="input-cell">
+      <input type="number" id="a3Count" min="0" step="1" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-a3Count"></div>
+    </div>
     <div class="tier-sep">×</div>
-    <input type="number" id="a3Days" min="0" step="0.5" value="0" placeholder="0">
-    <div class="tier-sep" style="font-size:0.7rem;">days</div>
+    <div class="input-cell">
+      <input type="number" id="a3Days" min="0" step="0.5" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-a3Days"></div>
+    </div>
+    <div class="tier-sep" style="font-size:.7rem;">days</div>
     <div id="a3Cost" class="tier-cost">$0.00</div>
   </div>
 
-  <!-- Tier 4 — $1,000/day -->
+  <!-- Tier 4 — $1,000 -->
   <div class="artist-tier">
     <div class="row-label">Artist — Tier 4<div class="sub">$1,000 / day &nbsp;·&nbsp; $125.00 / hr</div></div>
-    <input type="number" id="a4Count" min="0" step="1" value="0" placeholder="0">
+    <div class="input-cell">
+      <input type="number" id="a4Count" min="0" step="1" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-a4Count"></div>
+    </div>
     <div class="tier-sep">×</div>
-    <input type="number" id="a4Days" min="0" step="0.5" value="0" placeholder="0">
-    <div class="tier-sep" style="font-size:0.7rem;">days</div>
+    <div class="input-cell">
+      <input type="number" id="a4Days" min="0" step="0.5" value="0" placeholder="0">
+      <div class="chg-ind" id="ind-a4Days"></div>
+    </div>
+    <div class="tier-sep" style="font-size:.7rem;">days</div>
     <div id="a4Cost" class="tier-cost">$0.00</div>
   </div>
 
-  <!-- Labor Totals -->
   <hr class="section-divider">
   <div class="totals-row">
     <span class="t-label">Total Labor Cost</span>
@@ -571,33 +763,39 @@
   </div>
 </div>
 
-<!-- ═══ NO-PROFIT ITEMS ══════════════════════════════════════════ -->
+<!-- ═══ NO-PROFIT ITEMS ══════════════════════════════════════════════ -->
 <div class="card">
-  <div class="card-title">No-Profit Items <span style="font-weight:400;text-transform:none;font-size:0.7rem;letter-spacing:0;color:var(--muted);">(pass-through costs — no markup)</span></div>
+  <div class="card-title">No-Profit Items <span style="font-weight:400;text-transform:none;font-size:.7rem;letter-spacing:0;color:var(--muted);">(pass-through costs — no markup)</span></div>
   <div class="np-grid">
     <div class="field-group">
       <label>Permits</label>
       <input type="number" id="npPermits" min="0" step="0.01" value="0" placeholder="$0.00">
+      <div class="chg-ind" id="ind-npPermits"></div>
     </div>
     <div class="field-group">
       <label>Paint</label>
       <input type="number" id="npPaint" min="0" step="0.01" value="0" placeholder="$0.00">
+      <div class="chg-ind" id="ind-npPaint"></div>
     </div>
     <div class="field-group">
       <label>Supplies</label>
       <input type="number" id="npSupplies" min="0" step="0.01" value="0" placeholder="$0.00">
+      <div class="chg-ind" id="ind-npSupplies"></div>
     </div>
     <div class="field-group">
       <label>Lift / Equipment Rental</label>
       <input type="number" id="npLift" min="0" step="0.01" value="0" placeholder="$0.00">
+      <div class="chg-ind" id="ind-npLift"></div>
     </div>
     <div class="field-group">
       <label>Stencils / Patterns</label>
       <input type="number" id="npStencils" min="0" step="0.01" value="0" placeholder="$0.00">
+      <div class="chg-ind" id="ind-npStencils"></div>
     </div>
     <div class="field-group">
       <label>Miles</label>
       <input type="number" id="npMiles" min="0" step="0.01" value="0" placeholder="$0.00">
+      <div class="chg-ind" id="ind-npMiles"></div>
     </div>
   </div>
   <hr class="section-divider" style="margin-top:18px;">
@@ -607,7 +805,7 @@
   </div>
 </div>
 
-<!-- ═══ COST SUMMARY ═════════════════════════════════════════════ -->
+<!-- ═══ COST SUMMARY ═════════════════════════════════════════════════ -->
 <div class="card">
   <div class="card-title">Cost Summary</div>
   <div class="summary-grid">
@@ -626,7 +824,29 @@
   </div>
 </div>
 
-<!-- ═══ PRICING TIERS ════════════════════════════════════════════ -->
+<!-- ═══ VARIANCE / COMPARISON (Actual mode only) ═════════════════════ -->
+<div class="card variance-card" id="varianceCard" style="display:none;">
+  <div class="card-title">📊 Estimate vs Actual Comparison</div>
+  <div class="var-overview">
+    <div class="var-stat">
+      <div class="var-stat-label">Original Estimate<br><small style="font-weight:400;text-transform:none;letter-spacing:0;">(40% GM Sell Price)</small></div>
+      <div id="varEstTotal" class="var-stat-value">$0.00</div>
+    </div>
+    <div class="var-stat">
+      <div class="var-stat-label">Actual Final Cost<br><small style="font-weight:400;text-transform:none;letter-spacing:0;">(40% GM Sell Price)</small></div>
+      <div id="varActTotal" class="var-stat-value">$0.00</div>
+    </div>
+    <div class="var-stat var-hl">
+      <div class="var-stat-label">Total Variance</div>
+      <div id="varAmount" class="var-stat-value">—</div>
+      <div id="varPct" class="var-pct"></div>
+    </div>
+  </div>
+  <div class="changes-hdr" id="changesHdr">Changes from Estimate</div>
+  <div class="chg-list" id="changesList"></div>
+</div>
+
+<!-- ═══ PRICING TIERS ════════════════════════════════════════════════ -->
 <div class="card">
   <div class="card-title">Pricing Tiers</div>
   <table class="pricing-table">
@@ -641,15 +861,12 @@
       </tr>
     </thead>
     <tbody id="pricingTbody">
-      <tr>
-        <td class="pricing-placeholder" colspan="6">Enter labor and costs above to see pricing tiers.</td>
-      </tr>
+      <tr><td class="pricing-placeholder" colspan="6">Enter labor and costs above to see pricing tiers.</td></tr>
     </tbody>
   </table>
 </div>
 
-<!-- ═══ ACTIONS ══════════════════════════════════════════════════ -->
-<!-- Hidden file input for Load Job -->
+<!-- ═══ ACTIONS ══════════════════════════════════════════════════════ -->
 <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileLoad(event)">
 
 <div class="actions no-print">
@@ -659,19 +876,39 @@
   <button class="btn btn-pdf"   onclick="exportPDF()">&#8681; Export to PDF</button>
 </div>
 
+<!-- ═══ CONVERSION MODAL ═════════════════════════════════════════════ -->
+<div class="modal-overlay" id="convModal">
+  <div class="modal-box">
+    <h3>Estimate File Detected</h3>
+    <div class="modal-job"  id="mJobName">—</div>
+    <div class="modal-date" id="mSavedDate"></div>
+    <hr class="modal-divider">
+    <p class="modal-prompt">How would you like to load this estimate?</p>
+    <div class="modal-options">
+      <button class="modal-opt" onclick="doLoadAsEstimate()">
+        <div class="opt-icon">📋</div>
+        <div class="opt-title">Load as Estimate</div>
+        <div class="opt-desc">Continue editing this estimate. No comparison tracking.</div>
+      </button>
+      <button class="modal-opt primary" onclick="doConvertToActual()">
+        <div class="opt-icon">✓</div>
+        <div class="opt-title">Convert to Actual</div>
+        <div class="opt-desc">Track real costs against this estimate. Changed fields highlight red/green.</div>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ─── CONFIG ────────────────────────────────────────────────────────
+// ═══ CONFIG ═══════════════════════════════════════════════════════════
 const ARTIST_TIERS = [
   { id: 1, rate: 450  },
   { id: 2, rate: 500  },
   { id: 3, rate: 600  },
   { id: 4, rate: 1000 },
 ];
-
-// Overhead is calculated ONCE at the 40% GM rate ($90/hr) and is
-// the same dollar amount for all five pricing tiers (Chet's formula).
+// Overhead fixed at 40% GM rate for ALL pricing tiers (Chet's formula)
 const OVERHEAD_RATE = 90;
-
 const PRICING_TIERS = [
   { gm: 0.20, label: '20%' },
   { gm: 0.30, label: '30%' },
@@ -680,15 +917,69 @@ const PRICING_TIERS = [
   { gm: 0.60, label: '60%' },
 ];
 
-// ─── HELPERS ───────────────────────────────────────────────────────
+// ═══ FIELD MANIFESTS ══════════════════════════════════════════════════
+const TEXT_FIELDS = ['jobName','jobAddress','contactName','contactPhone','contactEmail'];
+const NUMBER_FIELDS = [
+  'adminHours','computerHours',
+  'a1Count','a1Days','a2Count','a2Days','a3Count','a3Days','a4Count','a4Days',
+  'npPermits','npPaint','npSupplies','npLift','npStencils','npMiles',
+];
+
+// ═══ STATE ════════════════════════════════════════════════════════════
+let docType      = 'estimate'; // 'estimate' | 'actual'
+let estimateSnap = null;       // snapshot of estimate data (set when converting to actual)
+let pendingLoad  = null;       // data waiting for modal decision
+
+// ═══ HELPERS ══════════════════════════════════════════════════════════
 const fmt  = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtN = n => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
 const val  = id => parseFloat(document.getElementById(id).value) || 0;
 const el   = id => document.getElementById(id);
 
-// ─── CALCULATE ─────────────────────────────────────────────────────
-function calculate() {
+function safeFilename(str) {
+  return (str || 'Job').replace(/[^a-z0-9\-]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+}
 
+// Format a field value for the change indicator display
+function fmtFieldVal(id, v) {
+  if (id === 'adminHours' || id === 'computerHours') return v + ' hr' + (v !== 1 ? 's' : '');
+  if (id.endsWith('Count')) return v + ' artist' + (v !== 1 ? 's' : '');
+  if (id.endsWith('Days'))  return v + ' day'    + (v !== 1 ? 's' : '');
+  return fmt(v);
+}
+function fmtFieldDiff(id, diff) {
+  const a = Math.abs(diff);
+  if (id === 'adminHours' || id === 'computerHours') return a + ' hr' + (a !== 1 ? 's' : '');
+  if (id.endsWith('Count')) return a + ' artist' + (a !== 1 ? 's' : '');
+  if (id.endsWith('Days'))  return a + ' day'    + (a !== 1 ? 's' : '');
+  return fmt(a);
+}
+
+// Compute 40% GM sell price from a data object
+function getSellPrice40(data) {
+  const adminCost  = (data.adminHours    || 0) * 50;
+  const compCost   = (data.computerHours || 0) * 35;
+  const artCost    = ARTIST_TIERS.reduce((s, t) =>
+    s + (data[`a${t.id}Count`] || 0) * t.rate * (data[`a${t.id}Days`] || 0), 0);
+  const totalLabor = adminCost + compCost + artCost;
+  const totalHours = (data.adminHours || 0) + (data.computerHours || 0) +
+    ARTIST_TIERS.reduce((s, t) =>
+      s + (data[`a${t.id}Count`] || 0) * (data[`a${t.id}Days`] || 0) * 8, 0);
+  const totalNP = (data.npPermits || 0) + (data.npPaint  || 0) + (data.npSupplies || 0) +
+                  (data.npLift    || 0) + (data.npStencils || 0) + (data.npMiles   || 0);
+  return totalLabor / 0.60 + totalHours * OVERHEAD_RATE + totalNP;
+}
+
+// Get current form values as a data object (same shape as saved JSON)
+function getCurrentData() {
+  const data = {};
+  TEXT_FIELDS.forEach(id   => { data[id] = el(id).value; });
+  NUMBER_FIELDS.forEach(id => { data[id] = val(id); });
+  return data;
+}
+
+// ═══ MAIN CALCULATE ═══════════════════════════════════════════════════
+function calculate() {
   // Admin & Computer
   const adminHrs  = val('adminHours');
   const compHrs   = val('computerHours');
@@ -698,27 +989,26 @@ function calculate() {
   el('computerCost').textContent = fmt(compCost);
 
   // Artist tiers
-  let artistCostTotal  = 0;
-  let artistHoursTotal = 0;
+  let artCostTotal  = 0;
+  let artHoursTotal = 0;
   ARTIST_TIERS.forEach(tier => {
     const count = val(`a${tier.id}Count`);
     const days  = val(`a${tier.id}Days`);
     const cost  = count * tier.rate * days;
-    const hours = count * days * 8;
+    const hrs   = count * days * 8;
     el(`a${tier.id}Cost`).textContent = fmt(cost);
-    artistCostTotal  += cost;
-    artistHoursTotal += hours;
+    artCostTotal  += cost;
+    artHoursTotal += hrs;
   });
 
-  // Labor totals
-  const totalLabor = adminCost + compCost + artistCostTotal;
-  const totalHours = adminHrs  + compHrs  + artistHoursTotal;
+  const totalLabor = adminCost + compCost + artCostTotal;
+  const totalHours = adminHrs  + compHrs  + artHoursTotal;
   el('totalLaborCost').textContent = fmt(totalLabor);
   el('totalHours').textContent     = fmtN(totalHours) + ' hrs';
 
-  // No-profit — all plain dollar values now (including miles)
-  const totalNP = val('npPermits') + val('npPaint') + val('npSupplies')
-                + val('npLift')    + val('npStencils') + val('npMiles');
+  // No-profit (all plain dollar inputs)
+  const totalNP = val('npPermits') + val('npPaint')    + val('npSupplies')
+                + val('npLift')    + val('npStencils')  + val('npMiles');
   el('totalNoProfit').textContent = fmt(totalNP);
 
   // Summary cards
@@ -728,23 +1018,25 @@ function calculate() {
 
   // Pricing table
   renderPricingTable(totalLabor, totalHours, totalNP);
+
+  // Actual-mode extras
+  if (docType === 'actual' && estimateSnap) {
+    updateChangeIndicators();
+    updateVarianceSection();
+  }
 }
 
-// ─── PRICING TABLE ──────────────────────────────────────────────────
+// ═══ PRICING TABLE ═════════════════════════════════════════════════════
 function renderPricingTable(labor, hours, noProfit) {
   const tbody = el('pricingTbody');
-
   if (labor === 0 && noProfit === 0) {
     tbody.innerHTML = `<tr><td class="pricing-placeholder" colspan="6">Enter labor and costs above to see pricing tiers.</td></tr>`;
     return;
   }
-
-  // Overhead: fixed once at $90/hr for ALL tiers
-  const fixedOverhead = hours * OVERHEAD_RATE;
-
+  const fixedOH = hours * OVERHEAD_RATE;
   tbody.innerHTML = PRICING_TIERS.map(tier => {
     const laborDiv  = labor / (1 - tier.gm);
-    const sellPrice = laborDiv + fixedOverhead + noProfit;
+    const sellPrice = laborDiv + fixedOH + noProfit;
     const hlClass   = tier.highlight ? ' class="hl"' : '';
     const badge     = tier.highlight ? '<span class="badge">Recommended</span>' : '';
     return `
@@ -752,23 +1044,249 @@ function renderPricingTable(labor, hours, noProfit) {
         <td>${tier.label}${badge}</td>
         <td>$${OVERHEAD_RATE}/hr</td>
         <td>${fmt(laborDiv)}</td>
-        <td>${fmt(fixedOverhead)}</td>
+        <td>${fmt(fixedOH)}</td>
         <td>${fmt(noProfit)}</td>
         <td><strong>${fmt(sellPrice)}</strong></td>
       </tr>`;
   }).join('');
 }
 
-// ─── SAVE / LOAD JOB ───────────────────────────────────────────────
-const TEXT_FIELDS   = ['jobName','jobAddress','contactName','contactPhone','contactEmail'];
-const NUMBER_FIELDS = [
-  'adminHours','computerHours',
-  'a1Count','a1Days','a2Count','a2Days','a3Count','a3Days','a4Count','a4Days',
-  'npPermits','npPaint','npSupplies','npLift','npStencils','npMiles',
-];
+// ═══ CHANGE INDICATORS ════════════════════════════════════════════════
+function updateChangeIndicators() {
+  // Number fields — red (over) or green (under) border + indicator
+  NUMBER_FIELDS.forEach(id => {
+    const input  = el(id);
+    const ind    = el('ind-' + id);
+    if (!input || !ind) return;
+    const estVal = estimateSnap[id] ?? 0;
+    const actVal = val(id);
+    const diff   = actVal - estVal;
+    if (Math.abs(diff) > 0.0001) {
+      const dir  = diff > 0 ? 'over' : 'under';
+      const sign = diff > 0 ? '+' : '';
+      const arr  = diff > 0 ? '▲' : '▼';
+      input.classList.toggle('field-over',  dir === 'over');
+      input.classList.toggle('field-under', dir === 'under');
+      ind.className = `chg-ind chg-${dir}`;
+      ind.innerHTML = `<span class="chg-est">Est:&nbsp;${fmtFieldVal(id, estVal)}</span>`
+        + `<span class="chg-arr">→</span>`
+        + `<span class="chg-act">${fmtFieldVal(id, actVal)}</span>`
+        + `<span class="chg-diff">${sign}${fmtFieldDiff(id, diff)}&nbsp;${arr}</span>`;
+    } else {
+      input.classList.remove('field-over', 'field-under');
+      ind.className = 'chg-ind';
+      ind.innerHTML = '';
+    }
+  });
+  // Text fields — amber border + "Was: …" indicator
+  TEXT_FIELDS.forEach(id => {
+    const input  = el(id);
+    const ind    = el('ind-' + id);
+    if (!input || !ind) return;
+    const estVal = estimateSnap[id] ?? '';
+    const actVal = input.value;
+    if (actVal !== estVal && estVal !== '') {
+      input.classList.add('field-text-changed');
+      ind.className = 'chg-ind chg-text';
+      ind.innerHTML = `<span class="chg-est">Was: "${estVal}"</span>`;
+    } else {
+      input.classList.remove('field-text-changed');
+      ind.className = 'chg-ind';
+      ind.innerHTML = '';
+    }
+  });
+}
+
+function clearChangeIndicators() {
+  document.querySelectorAll('.chg-ind').forEach(ind => {
+    ind.className = 'chg-ind';
+    ind.innerHTML = '';
+  });
+  document.querySelectorAll('input.field-over, input.field-under, input.field-text-changed')
+    .forEach(inp => inp.classList.remove('field-over', 'field-under', 'field-text-changed'));
+}
+
+// ═══ VARIANCE SECTION ═════════════════════════════════════════════════
+function getChanges() {
+  if (!estimateSnap) return [];
+  const changes = [];
+  // Admin
+  const aHE = estimateSnap.adminHours || 0;
+  const aHA = val('adminHours');
+  if (aHE !== aHA)
+    changes.push({ label: 'Admin Hours', estD: aHE + ' hrs', actD: aHA + ' hrs', impact: (aHA - aHE) * 50 });
+  // Computer
+  const cHE = estimateSnap.computerHours || 0;
+  const cHA = val('computerHours');
+  if (cHE !== cHA)
+    changes.push({ label: 'Computer Hours', estD: cHE + ' hrs', actD: cHA + ' hrs', impact: (cHA - cHE) * 35 });
+  // Artist tiers (show tier-level cost impact)
+  ARTIST_TIERS.forEach(tier => {
+    const eC = estimateSnap[`a${tier.id}Count`] || 0;
+    const eD = estimateSnap[`a${tier.id}Days`]  || 0;
+    const aC = val(`a${tier.id}Count`);
+    const aD = val(`a${tier.id}Days`);
+    if (eC !== aC || eD !== aD) {
+      const eCost = eC * tier.rate * eD;
+      const aCost = aC * tier.rate * aD;
+      changes.push({
+        label:  `Artists @ $${tier.rate.toLocaleString()}/day`,
+        estD:   `${eC} × ${eD}d`,
+        actD:   `${aC} × ${aD}d`,
+        impact: aCost - eCost,
+      });
+    }
+  });
+  // NP items
+  const npDefs = [
+    { id: 'npPermits',  label: 'Permits'           },
+    { id: 'npPaint',    label: 'Paint'              },
+    { id: 'npSupplies', label: 'Supplies'           },
+    { id: 'npLift',     label: 'Lift / Equipment'  },
+    { id: 'npStencils', label: 'Stencils / Patterns'},
+    { id: 'npMiles',    label: 'Miles'              },
+  ];
+  npDefs.forEach(({ id, label }) => {
+    const est = estimateSnap[id] || 0;
+    const act = val(id);
+    if (est !== act)
+      changes.push({ label, estD: fmt(est), actD: fmt(act), impact: act - est });
+  });
+  return changes;
+}
+
+function updateVarianceSection() {
+  const card = el('varianceCard');
+  if (docType !== 'actual' || !estimateSnap) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  const estP     = getSellPrice40(estimateSnap);
+  const actData  = getCurrentData();
+  const actP     = getSellPrice40(actData);
+  const variance = actP - estP;
+  const pct      = estP > 0 ? (variance / estP * 100) : 0;
+  const sign     = variance >= 0 ? '+' : '';
+
+  el('varEstTotal').textContent = fmt(estP);
+  el('varActTotal').textContent = fmt(actP);
+
+  const varEl = el('varAmount');
+  const pctEl = el('varPct');
+  if (Math.abs(variance) < 0.01) {
+    varEl.textContent = 'No variance';
+    varEl.className   = 'var-stat-value';
+    pctEl.textContent = '0.0%';
+    pctEl.className   = 'var-pct';
+  } else {
+    varEl.textContent = sign + fmt(Math.abs(variance));
+    varEl.className   = 'var-stat-value ' + (variance > 0 ? 'v-over' : 'v-under');
+    pctEl.textContent = sign + pct.toFixed(1) + '%';
+    pctEl.className   = 'var-pct ' + (variance > 0 ? 'v-over' : 'v-under');
+  }
+
+  const changes  = getChanges();
+  const listEl   = el('changesList');
+  const hdrEl    = el('changesHdr');
+  hdrEl.textContent = changes.length
+    ? `${changes.length} Change${changes.length !== 1 ? 's' : ''} from Estimate`
+    : 'Changes from Estimate';
+
+  if (changes.length === 0) {
+    listEl.innerHTML = '<div class="no-changes">✓ No changes from estimate — actual costs match exactly</div>';
+    return;
+  }
+  listEl.innerHTML = changes.map(ch => {
+    const dir  = ch.impact > 0 ? 'over' : 'under';
+    const sign = ch.impact > 0 ? '+' : '';
+    return `<div class="chg-row chg-${dir}">
+      <span class="cr-field">${ch.label}</span>
+      <span class="cr-est">Est: ${ch.estD}</span>
+      <span class="cr-arr">→</span>
+      <span class="cr-act">Act: ${ch.actD}</span>
+      <span class="cr-impact ${dir}">${sign}${fmt(Math.abs(ch.impact))}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══ MODE MANAGEMENT ══════════════════════════════════════════════════
+function setMode(type) {
+  docType = type;
+  el('btnEstimate').classList.toggle('active', type === 'estimate');
+  el('btnActual').classList.toggle('active', type === 'actual');
+  el('actualBanner').classList.toggle('show', type === 'actual');
+  if (type === 'estimate') {
+    clearChangeIndicators();
+    el('varianceCard').style.display = 'none';
+  }
+  calculate();
+}
+
+function handleModeToggle(newType) {
+  if (newType === docType) return;
+  if (newType === 'actual') {
+    if (!estimateSnap) {
+      alert('To use Actual mode:\n\n1. Click "Load Job"\n2. Select an Estimate file (.json)\n3. Choose "Convert to Actual"\n\nActual mode requires an estimate to compare against.');
+      return;
+    }
+    setMode('actual');
+  } else {
+    if (docType === 'actual' && estimateSnap) {
+      if (!confirm('Switch back to Estimate mode?\n\nThis will clear the Actual comparison data. The form values will stay.')) return;
+      estimateSnap = null;
+    }
+    setMode('estimate');
+  }
+}
+
+// ═══ CONVERSION MODAL ═════════════════════════════════════════════════
+function showConversionModal(data) {
+  pendingLoad = data;
+  el('mJobName').textContent = data.jobName || 'Unnamed Job';
+  const saved = data._saved
+    ? new Date(data._saved).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    : 'Unknown date';
+  el('mSavedDate').textContent = 'Saved: ' + saved;
+  el('convModal').classList.add('show');
+}
+
+function closeConversionModal() {
+  el('convModal').classList.remove('show');
+  pendingLoad = null;
+}
+
+function doLoadAsEstimate() {
+  if (!pendingLoad) return;
+  populateFields(pendingLoad);
+  estimateSnap = null;
+  closeConversionModal();
+  setMode('estimate');
+}
+
+function doConvertToActual() {
+  if (!pendingLoad) return;
+  estimateSnap = { ...pendingLoad };
+  populateFields(pendingLoad);
+  el('abJobName').textContent = pendingLoad.jobName || 'Unnamed Job';
+  closeConversionModal();
+  setMode('actual');
+}
+
+// Close modal on overlay click
+el('convModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConversionModal();
+});
+
+// ═══ SAVE / LOAD ═══════════════════════════════════════════════════════
+function populateFields(data) {
+  TEXT_FIELDS.forEach(id   => { if (data[id] !== undefined) el(id).value = data[id]; });
+  NUMBER_FIELDS.forEach(id => { if (data[id] !== undefined) el(id).value = data[id]; });
+}
 
 function buildJobData() {
-  const data = { _version: '1.1', _saved: new Date().toISOString() };
+  const data = { _version: '2.0', _saved: new Date().toISOString(), documentType: docType };
   TEXT_FIELDS.forEach(id   => { data[id] = el(id).value; });
   NUMBER_FIELDS.forEach(id => { data[id] = val(id); });
   return data;
@@ -785,14 +1303,26 @@ function downloadJSON(data, filename) {
   URL.revokeObjectURL(url);
 }
 
-function safeFilename(str) {
-  return (str || 'Job').replace(/[^a-z0-9\-]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-}
-
 function saveJob() {
   const jobName  = el('jobName').value.trim() || 'Unnamed_Job';
   const dateFile = new Date().toISOString().slice(0, 10);
-  downloadJSON(buildJobData(), `${safeFilename(jobName)}_${dateFile}.json`);
+  const safe     = safeFilename(jobName);
+  const typeStr  = docType === 'actual' ? 'Actual' : 'Estimate';
+
+  const data = buildJobData();
+  if (docType === 'actual' && estimateSnap) {
+    data.estimateData = { ...estimateSnap };
+    // Store computed variance summary
+    const estP = getSellPrice40(estimateSnap);
+    const actP = getSellPrice40(getCurrentData());
+    data.variance = {
+      estimateTotal: Math.round(estP * 100) / 100,
+      actualTotal:   Math.round(actP * 100) / 100,
+      difference:    Math.round((actP - estP) * 100) / 100,
+      percentDiff:   estP > 0 ? Math.round((actP - estP) / estP * 1000) / 10 : 0,
+    };
+  }
+  downloadJSON(data, `${safe}_${typeStr}_${dateFile}.json`);
 }
 
 function loadJob() {
@@ -806,10 +1336,21 @@ function handleFileLoad(event) {
   reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
-      TEXT_FIELDS.forEach(id   => { if (data[id] !== undefined) el(id).value = data[id]; });
-      NUMBER_FIELDS.forEach(id => { if (data[id] !== undefined) el(id).value = data[id]; });
-      calculate();
-      event.target.value = ''; // allow re-loading same file
+      event.target.value = '';
+
+      if (data.documentType === 'actual' && data.estimateData) {
+        // Restoring a saved Actual file — full state restore
+        estimateSnap = { ...data.estimateData };
+        populateFields(data);
+        el('abJobName').textContent = data.jobName || 'Unnamed Job';
+        setMode('actual');
+      } else if (data.documentType === 'estimate' || !data.documentType) {
+        // Estimate file (or legacy v1.1) — offer conversion
+        showConversionModal(data);
+      } else {
+        populateFields(data);
+        setMode('estimate');
+      }
     } catch(err) {
       alert('Could not load this file.\nMake sure it is a valid PPAG job JSON file.');
     }
@@ -817,218 +1358,420 @@ function handleFileLoad(event) {
   reader.readAsText(file);
 }
 
-// ─── RESET ─────────────────────────────────────────────────────────
+// ═══ RESET ═════════════════════════════════════════════════════════════
 function resetForm() {
-  if (!confirm('Reset all fields? This cannot be undone.')) return;
+  const msg = docType === 'actual'
+    ? 'Exit Actual mode and reset all fields?\n\nThis will clear all form data and comparison data.'
+    : 'Reset all fields? This cannot be undone.';
+  if (!confirm(msg)) return;
+  estimateSnap = null;
   TEXT_FIELDS.forEach(id   => { el(id).value = ''; });
   NUMBER_FIELDS.forEach(id => { el(id).value = 0;  });
-  calculate();
+  setMode('estimate');
 }
 
-// ─── PDF EXPORT (jsPDF — direct download, no print dialog) ─────────
-function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+// ═══ PDF EXPORT ════════════════════════════════════════════════════════
+async function loadLogoForPDF() {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch(e) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = 'PPAG_CAL_LOGO1.png';
+  });
+}
 
-  const W        = doc.internal.pageSize.getWidth();  // 215.9 mm
-  const M        = 14;                                 // page margin
-  const now      = new Date();
-  const dateStr  = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const dateFile = now.toISOString().slice(0, 10);
-  const jobName  = el('jobName').value.trim() || 'Unnamed Job';
-  let y = 0;
+async function exportPDF() {
+  const logoData = await loadLogoForPDF();
+  if (docType === 'actual' && estimateSnap) {
+    buildActualPDF(logoData);
+  } else {
+    buildEstimatePDF(logoData);
+  }
+}
 
-  // ── Header bar ─────────────────────────────────────────────────
+// ── Shared PDF helpers ─────────────────────────────────────────────────
+function pdfHeader(doc, logoData, titleLine1, titleLine2, dateStr) {
+  const W = doc.internal.pageSize.getWidth();
+  const M = 14;
+  const H = 30;
   doc.setFillColor(26, 58, 92);
-  doc.rect(0, 0, W, 27, 'F');
+  doc.rect(0, 0, W, H, 'F');
+
+  let textX = M;
+  if (logoData) {
+    // Logo fits within header height; 22mm wide, proportional
+    doc.addImage(logoData, 'PNG', M, (H - 18) / 2, 42, 18);
+    textX = M + 48;
+  }
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text('Billboard & Handpainting Cost Estimate', M, 11);
+  doc.setFontSize(12);
+  doc.text(titleLine1, textX, 11);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(180, 210, 240);
-  doc.text('Painted Pieces Art Group  ·  Job Cost Estimator', M, 19);
+  doc.text(titleLine2, textX, 19);
   doc.text('Generated: ' + dateStr, W - M, 19, { align: 'right' });
+  return H + 5;
+}
 
-  y = 33;
+function pdfSectionHead(doc, title, y, M) {
+  const W = doc.internal.pageSize.getWidth();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(46, 109, 164);
+  doc.text(title, M, y);
+  y += 1.5;
+  doc.setDrawColor(200, 220, 240);
+  doc.setLineWidth(0.35);
+  doc.line(M, y, W - M, y);
+  doc.setTextColor(30, 43, 58);
+  return y + 4;
+}
 
-  // ── Section heading helper ─────────────────────────────────────
-  function sectionHead(title) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(46, 109, 164);
-    doc.text(title, M, y);
-    y += 1.5;
-    doc.setDrawColor(200, 220, 240);
-    doc.setLineWidth(0.35);
-    doc.line(M, y, W - M, y);
-    y += 4;
-    doc.setTextColor(30, 43, 58);
-  }
+// ── ESTIMATE PDF ───────────────────────────────────────────────────────
+function buildEstimatePDF(logoData) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  const W = doc.internal.pageSize.getWidth();
+  const M = 14;
+  const now = new Date();
+  const dateStr  = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const dateFile = now.toISOString().slice(0, 10);
+  const jobName  = el('jobName').value.trim() || 'Unnamed Job';
 
-  // ── Job Details ────────────────────────────────────────────────
-  sectionHead('JOB DETAILS');
+  let y = pdfHeader(doc, logoData,
+    'Billboard & Handpainting — Cost Estimate',
+    'Painted Pieces Art Group  ·  Job Cost Estimator',
+    dateStr);
+
+  // Job details
+  y = pdfSectionHead(doc, 'JOB DETAILS', y, M);
   const contact = [el('contactPhone').value, el('contactEmail').value].filter(Boolean).join('  ·  ') || '—';
   doc.autoTable({
     startY: y, margin: { left: M, right: M },
     head: [['Job Name', 'Address', 'Contact', 'Phone / Email']],
-    body: [[
-      el('jobName').value    || '—',
-      el('jobAddress').value || '—',
-      el('contactName').value || '—',
-      contact,
-    ]],
-    styles:     { fontSize: 8.5, cellPadding: [2.5, 3] },
+    body: [[el('jobName').value || '—', el('jobAddress').value || '—', el('contactName').value || '—', contact]],
+    styles: { fontSize: 8.5, cellPadding: [2.5, 3] },
     headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
-    theme: 'plain',
-    tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
   });
   y = doc.lastAutoTable.finalY + 8;
 
-  // ── Labor ──────────────────────────────────────────────────────
-  sectionHead('LABOR');
-  const adminHrs = val('adminHours');
-  const compHrs  = val('computerHours');
+  // Labor
+  y = pdfSectionHead(doc, 'LABOR', y, M);
+  const aH = val('adminHours'), cH = val('computerHours');
   const laborRows = [];
-
-  if (adminHrs > 0)
-    laborRows.push(['Admin', adminHrs + ' hrs × $50/hr', fmt(adminHrs * 50)]);
-  if (compHrs > 0)
-    laborRows.push(['Computer / Design', compHrs + ' hrs × $35/hr', fmt(compHrs * 35)]);
-
-  ARTIST_TIERS.forEach(tier => {
-    const count = val(`a${tier.id}Count`);
-    const days  = val(`a${tier.id}Days`);
-    if (count > 0 || days > 0) {
-      laborRows.push([
-        `Artist Tier ${tier.id}  ($${tier.rate}/day)`,
-        `${count} artist${count !== 1 ? 's' : ''} × ${days} day${days !== 1 ? 's' : ''}`,
-        fmt(count * tier.rate * days),
-      ]);
-    }
+  if (aH > 0) laborRows.push(['Admin', `${aH} hrs × $50/hr`, fmt(aH * 50)]);
+  if (cH > 0) laborRows.push(['Computer / Design', `${cH} hrs × $35/hr`, fmt(cH * 35)]);
+  ARTIST_TIERS.forEach(t => {
+    const c = val(`a${t.id}Count`), d = val(`a${t.id}Days`);
+    if (c > 0 || d > 0)
+      laborRows.push([`Artist Tier ${t.id}  ($${t.rate}/day)`,
+        `${c} artist${c!==1?'s':''} × ${d} day${d!==1?'s':''}`, fmt(c * t.rate * d)]);
   });
-  if (laborRows.length === 0) laborRows.push(['(no labor entered)', '', '$0.00']);
-
-  // Totals rows
-  const totalLabor = val('adminHours') * 50 + val('computerHours') * 35
-    + ARTIST_TIERS.reduce((s, t) => s + val(`a${t.id}Count`) * t.rate * val(`a${t.id}Days`), 0);
-  const totalHours = val('adminHours') + val('computerHours')
-    + ARTIST_TIERS.reduce((s, t) => s + val(`a${t.id}Count`) * val(`a${t.id}Days`) * 8, 0);
-
+  if (!laborRows.length) laborRows.push(['(no labor entered)', '', '$0.00']);
+  const totalLabor = aH*50 + cH*35 + ARTIST_TIERS.reduce((s,t) => s+val(`a${t.id}Count`)*t.rate*val(`a${t.id}Days`),0);
+  const totalHours = aH + cH + ARTIST_TIERS.reduce((s,t) => s+val(`a${t.id}Count`)*val(`a${t.id}Days`)*8, 0);
   laborRows.push(['', 'Total Labor Cost', fmt(totalLabor)]);
   laborRows.push(['', 'Total Hours (for overhead)', fmtN(totalHours) + ' hrs']);
-
   doc.autoTable({
     startY: y, margin: { left: M, right: M },
     head: [['Description', 'Calculation', 'Cost']],
     body: laborRows,
-    styles:     { fontSize: 8.5, cellPadding: [2.5, 3] },
+    styles: { fontSize: 8.5, cellPadding: [2.5, 3] },
     headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
-    columnStyles: { 0: { cellWidth: 75 }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 32, halign: 'right' } },
-    didParseCell: data => {
-      if (data.section === 'body' && data.row.index >= laborRows.length - 2) {
-        data.cell.styles.fontStyle  = 'bold';
-        data.cell.styles.fillColor  = [240, 247, 255];
-      }
+    columnStyles: { 0: { cellWidth: 75 }, 2: { cellWidth: 32, halign: 'right' } },
+    didParseCell: d => {
+      if (d.section === 'body' && d.row.index >= laborRows.length - 2)
+        { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 247, 255]; }
     },
-    theme: 'plain',
-    tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
   });
   y = doc.lastAutoTable.finalY + 8;
 
-  // ── No-Profit ──────────────────────────────────────────────────
-  sectionHead('NO-PROFIT PASS-THROUGH COSTS');
-  const npDefs = [
-    ['Permits',               val('npPermits')],
-    ['Paint',                 val('npPaint')],
-    ['Supplies',              val('npSupplies')],
-    ['Lift / Equipment',      val('npLift')],
-    ['Stencils / Patterns',   val('npStencils')],
-    ['Miles',                 val('npMiles')],
-  ];
-  const totalNP = npDefs.reduce((s, [, v]) => s + v, 0);
-  const npRows  = npDefs.filter(([, v]) => v > 0).map(([k, v]) => [k, fmt(v)]);
-  if (npRows.length === 0) npRows.push(['(none entered)', '—']);
+  // No-profit
+  y = pdfSectionHead(doc, 'NO-PROFIT PASS-THROUGH COSTS', y, M);
+  const npDefs = [['Permits',val('npPermits')],['Paint',val('npPaint')],['Supplies',val('npSupplies')],
+    ['Lift / Equipment',val('npLift')],['Stencils / Patterns',val('npStencils')],['Miles',val('npMiles')]];
+  const totalNP = npDefs.reduce((s,[,v]) => s+v, 0);
+  const npRows  = npDefs.filter(([,v]) => v > 0).map(([k,v]) => [k, fmt(v)]);
+  if (!npRows.length) npRows.push(['(none entered)', '—']);
   npRows.push(['Total No-Profit', fmt(totalNP)]);
-
   doc.autoTable({
     startY: y, margin: { left: M, right: M },
     head: [['Item', 'Amount']],
     body: npRows,
-    styles:     { fontSize: 8.5, cellPadding: [2.5, 3] },
+    styles: { fontSize: 8.5, cellPadding: [2.5, 3] },
     headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
-    columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 35, halign: 'right' } },
-    didParseCell: data => {
-      if (data.section === 'body' && data.row.index === npRows.length - 1) {
-        data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fillColor = [240, 247, 255];
-      }
+    columnStyles: { 1: { cellWidth: 35, halign: 'right' } },
+    didParseCell: d => {
+      if (d.section === 'body' && d.row.index === npRows.length - 1)
+        { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 247, 255]; }
     },
-    theme: 'plain',
-    tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
   });
   y = doc.lastAutoTable.finalY + 8;
 
-  // ── Pricing Tiers ──────────────────────────────────────────────
-  sectionHead('PRICING TIERS');
+  // Pricing tiers
+  y = pdfSectionHead(doc, 'PRICING TIERS', y, M);
   const fixedOH = totalHours * OVERHEAD_RATE;
-
-  const pricingRows = PRICING_TIERS.map(t => {
-    const laborDiv  = totalLabor / (1 - t.gm);
-    const sellPrice = laborDiv + fixedOH + totalNP;
-    return [
-      t.label + (t.highlight ? '  ★ Recommended' : ''),
-      '$' + OVERHEAD_RATE + '/hr',
-      fmt(laborDiv),
-      fmt(fixedOH),
-      fmt(totalNP),
-      fmt(sellPrice),
-    ];
+  const prRows  = PRICING_TIERS.map(t => {
+    const ld = totalLabor / (1 - t.gm);
+    return [t.label + (t.highlight ? '  ★ Recommended' : ''), `$${OVERHEAD_RATE}/hr`,
+      fmt(ld), fmt(fixedOH), fmt(totalNP), fmt(ld + fixedOH + totalNP)];
   });
-
   doc.autoTable({
     startY: y, margin: { left: M, right: M },
     head: [['GM %', 'OH Rate', 'Labor ÷ (1−GM)', 'OH Cost', 'No-Profit', 'Sell Price']],
-    body: pricingRows,
-    styles:     { fontSize: 8.5, cellPadding: [2.5, 3], halign: 'right' },
-    headStyles: { fillColor: [26, 58, 92], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+    body: prRows,
+    styles: { fontSize: 8.5, cellPadding: [2.5, 3], halign: 'right' },
+    headStyles: { fillColor: [26, 58, 92], textColor: 255, fontStyle: 'bold', fontSize: 7 },
     columnStyles: { 0: { halign: 'left' } },
-    didParseCell: data => {
-      if (data.section === 'body' && data.row.index === 2) {   // 40% row
-        data.cell.styles.fillColor  = [255, 248, 225];
-        data.cell.styles.fontStyle  = 'bold';
-        if (data.column.index === 5) data.cell.styles.textColor = [22, 100, 60];
+    didParseCell: d => {
+      if (d.section === 'body' && d.row.index === 2) {
+        d.cell.styles.fillColor = [255, 248, 225];
+        d.cell.styles.fontStyle = 'bold';
+        if (d.column.index === 5) d.cell.styles.textColor = [22, 100, 60];
       }
     },
-    theme: 'plain',
-    tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
   });
   y = doc.lastAutoTable.finalY + 7;
 
-  // ── Footer ─────────────────────────────────────────────────────
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(7);
   doc.setTextColor(160, 160, 160);
   doc.text('This estimate is prepared by Painted Pieces Art Group. All prices subject to final agreement.', M, y);
 
-  // ── Save PDF ───────────────────────────────────────────────────
   const safe = safeFilename(jobName);
-  doc.save(`${safe}_Quote_${dateFile}.pdf`);
-
-  // ── Also auto-save JSON data file ─────────────────────────────
-  setTimeout(() => downloadJSON(buildJobData(), `${safe}_${dateFile}.json`), 400);
+  doc.save(`${safe}_Estimate_${dateFile}.pdf`);
+  setTimeout(() => downloadJSON(buildJobData(), `${safe}_Estimate_${dateFile}.json`), 400);
 }
 
-// ─── BIND ALL INPUTS (exclude file picker) ─────────────────────────
+// ── ACTUAL / COMPARISON PDF ────────────────────��───────────────────────
+function buildActualPDF(logoData) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  const W = doc.internal.pageSize.getWidth();
+  const M = 14;
+  const now = new Date();
+  const dateStr  = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const dateFile = now.toISOString().slice(0, 10);
+  const jobName  = el('jobName').value.trim() || 'Unnamed Job';
+  const estSaved = estimateSnap._saved
+    ? new Date(estimateSnap._saved).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    : '—';
+
+  let y = pdfHeader(doc, logoData,
+    'Billboard & Handpainting — Actual Costs',
+    'Painted Pieces Art Group  ·  Job Cost Report',
+    dateStr);
+
+  // Job details (2-row: est date and act date)
+  y = pdfSectionHead(doc, 'JOB DETAILS', y, M);
+  const contact = [el('contactPhone').value, el('contactEmail').value].filter(Boolean).join('  ·  ') || '—';
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['Job Name', 'Address', 'Contact', 'Estimate Date']],
+    body: [[el('jobName').value || '—', el('jobAddress').value || '—', el('contactName').value || '—', estSaved]],
+    styles: { fontSize: 8.5, cellPadding: [2.5, 3] },
+    headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Overview: Estimate vs Actual at 40% GM
+  const estP  = getSellPrice40(estimateSnap);
+  const actD  = getCurrentData();
+  const actP  = getSellPrice40(actD);
+  const varP  = actP - estP;
+  const pct   = estP > 0 ? (varP / estP * 100) : 0;
+  const vsign = varP >= 0 ? '+' : '';
+
+  y = pdfSectionHead(doc, 'ESTIMATE VS ACTUAL OVERVIEW  (40% GM Recommended Sell Price)', y, M);
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['', 'Estimated', 'Actual', 'Variance']],
+    body: [['40% GM Sell Price', fmt(estP), fmt(actP),
+      vsign + fmt(Math.abs(varP)) + '  (' + vsign + pct.toFixed(1) + '%)']],
+    styles:     { fontSize: 9, cellPadding: [3, 4], halign: 'right', fontStyle: 'bold' },
+    headStyles: { fillColor: [26, 58, 92], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: { 0: { halign: 'left', fontStyle: 'bold', cellWidth: 60 } },
+    didParseCell: d => {
+      if (d.section === 'body' && d.column.index === 3) {
+        d.cell.styles.textColor = varP > 0 ? [180, 20, 20] : varP < 0 ? [20, 130, 60] : [30, 43, 58];
+      }
+    },
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Labor comparison
+  y = pdfSectionHead(doc, 'LABOR COMPARISON', y, M);
+  const lcRows = [];
+  function lcPush(label, eCost, aCost) {
+    if (eCost === 0 && aCost === 0) return;
+    const d = aCost - eCost;
+    lcRows.push([label, fmt(eCost), fmt(aCost), d === 0 ? '—' : (d>0?'+':'')+fmt(Math.abs(d))]);
+  }
+  lcPush('Admin', (estimateSnap.adminHours||0)*50, val('adminHours')*50);
+  lcPush('Computer / Design', (estimateSnap.computerHours||0)*35, val('computerHours')*35);
+  ARTIST_TIERS.forEach(t => {
+    const eC = estimateSnap[`a${t.id}Count`]||0, eD = estimateSnap[`a${t.id}Days`]||0;
+    const aC = val(`a${t.id}Count`),              aD = val(`a${t.id}Days`);
+    const eCost = eC*t.rate*eD, aCost = aC*t.rate*aD;
+    if (eCost > 0 || aCost > 0) {
+      const diff = aCost - eCost;
+      lcRows.push([`Artists @ $${t.rate}/day`,
+        `${fmt(eCost)}  (${eC}×${eD}d)`, `${fmt(aCost)}  (${aC}×${aD}d)`,
+        diff===0?'—':(diff>0?'+':'')+fmt(Math.abs(diff))]);
+    }
+  });
+  if (!lcRows.length) lcRows.push(['(no labor entered)', '—', '—', '—']);
+  // Totals
+  const eTL = (estimateSnap.adminHours||0)*50 + (estimateSnap.computerHours||0)*35
+    + ARTIST_TIERS.reduce((s,t) => s+(estimateSnap[`a${t.id}Count`]||0)*t.rate*(estimateSnap[`a${t.id}Days`]||0),0);
+  const aTL = val('adminHours')*50 + val('computerHours')*35
+    + ARTIST_TIERS.reduce((s,t) => s+val(`a${t.id}Count`)*t.rate*val(`a${t.id}Days`),0);
+  const dTL = aTL - eTL;
+  lcRows.push(['Total Labor', fmt(eTL), fmt(aTL), dTL===0?'—':(dTL>0?'+':'')+fmt(Math.abs(dTL))]);
+
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['Description', 'Estimated', 'Actual', 'Difference']],
+    body: lcRows,
+    styles:     { fontSize: 8.5, cellPadding: [2.5, 3], halign: 'right' },
+    headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
+    columnStyles: { 0: { halign: 'left', cellWidth: 70 } },
+    didParseCell: d => {
+      const isTotal = d.section === 'body' && d.row.index === lcRows.length - 1;
+      if (isTotal) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 247, 255]; }
+      if (d.section === 'body' && d.column.index === 3 && !isTotal) {
+        const v = d.cell.raw;
+        if (v && v.startsWith('+')) d.cell.styles.textColor = [180, 20, 20];
+        else if (v && v.startsWith('-')) d.cell.styles.textColor = [20, 130, 60];
+      }
+    },
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // No-profit comparison
+  y = pdfSectionHead(doc, 'NO-PROFIT COMPARISON', y, M);
+  const npItems = [
+    { id:'npPermits',  label:'Permits'            },
+    { id:'npPaint',    label:'Paint'               },
+    { id:'npSupplies', label:'Supplies'            },
+    { id:'npLift',     label:'Lift / Equipment'   },
+    { id:'npStencils', label:'Stencils / Patterns' },
+    { id:'npMiles',    label:'Miles'               },
+  ];
+  const npRows = [];
+  npItems.forEach(({ id, label }) => {
+    const e = estimateSnap[id]||0, a = val(id);
+    if (e > 0 || a > 0) {
+      const d = a - e;
+      npRows.push([label, fmt(e), fmt(a), d===0?'—':(d>0?'+':'')+fmt(Math.abs(d))]);
+    }
+  });
+  if (!npRows.length) npRows.push(['(none entered)', '—', '—', '—']);
+  const eNP = npItems.reduce((s,{id}) => s+(estimateSnap[id]||0), 0);
+  const aNP = npItems.reduce((s,{id}) => s+val(id), 0);
+  const dNP = aNP - eNP;
+  npRows.push(['Total No-Profit', fmt(eNP), fmt(aNP), dNP===0?'—':(dNP>0?'+':'')+fmt(Math.abs(dNP))]);
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['Item', 'Estimated', 'Actual', 'Difference']],
+    body: npRows,
+    styles:     { fontSize: 8.5, cellPadding: [2.5, 3], halign: 'right' },
+    headStyles: { fillColor: [236, 244, 253], textColor: [26, 58, 92], fontStyle: 'bold', fontSize: 7 },
+    columnStyles: { 0: { halign: 'left', cellWidth: 60 } },
+    didParseCell: d => {
+      const isTotal = d.section === 'body' && d.row.index === npRows.length - 1;
+      if (isTotal) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [240, 247, 255]; }
+      if (d.section === 'body' && d.column.index === 3 && !isTotal) {
+        const v = d.cell.raw;
+        if (v && v.startsWith('+')) d.cell.styles.textColor = [180, 20, 20];
+        else if (v && v.startsWith('-')) d.cell.styles.textColor = [20, 130, 60];
+      }
+    },
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Pricing comparison (all tiers)
+  y = pdfSectionHead(doc, 'PRICING TIERS — ESTIMATE VS ACTUAL', y, M);
+  const eTH = (estimateSnap.adminHours||0) + (estimateSnap.computerHours||0)
+    + ARTIST_TIERS.reduce((s,t) => s+(estimateSnap[`a${t.id}Count`]||0)*(estimateSnap[`a${t.id}Days`]||0)*8, 0);
+  const aTH = val('adminHours') + val('computerHours')
+    + ARTIST_TIERS.reduce((s,t) => s+val(`a${t.id}Count`)*val(`a${t.id}Days`)*8, 0);
+  const eOH = eTH * OVERHEAD_RATE, aOH = aTH * OVERHEAD_RATE;
+
+  const ptRows = PRICING_TIERS.map(t => {
+    const eLP = eTL / (1 - t.gm);
+    const aLP = aTL / (1 - t.gm);
+    const eS  = eLP + eOH + eNP;
+    const aS  = aLP + aOH + aNP;
+    const d   = aS - eS;
+    return [
+      t.label + (t.highlight ? '  ★' : ''),
+      fmt(eS), fmt(aS),
+      d===0 ? '—' : (d>0?'+':'')+fmt(Math.abs(d)),
+    ];
+  });
+  doc.autoTable({
+    startY: y, margin: { left: M, right: M },
+    head: [['GM %', 'Est. Sell Price', 'Act. Sell Price', 'Variance']],
+    body: ptRows,
+    styles:     { fontSize: 8.5, cellPadding: [2.5, 3], halign: 'right' },
+    headStyles: { fillColor: [26, 58, 92], textColor: 255, fontStyle: 'bold', fontSize: 7 },
+    columnStyles: { 0: { halign: 'left' } },
+    didParseCell: d => {
+      if (d.section === 'body' && d.row.index === 2) {
+        d.cell.styles.fillColor = [255, 248, 225];
+        d.cell.styles.fontStyle = 'bold';
+      }
+      if (d.section === 'body' && d.column.index === 3) {
+        const v = d.cell.raw;
+        if (v && v.startsWith('+')) d.cell.styles.textColor = [180, 20, 20];
+        else if (v && v.startsWith('-')) d.cell.styles.textColor = [20, 130, 60];
+      }
+    },
+    theme: 'plain', tableLineColor: [210, 225, 240], tableLineWidth: 0.2,
+  });
+  y = doc.lastAutoTable.finalY + 7;
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(160, 160, 160);
+  doc.text('Actual cost report prepared by Painted Pieces Art Group. Overhead calculated at $90/hr (40% GM basis).', M, y);
+
+  const safe = safeFilename(jobName);
+  doc.save(`${safe}_Actual_${dateFile}.pdf`);
+  setTimeout(() => {
+    const data = buildJobData();
+    data.estimateData = { ...estimateSnap };
+    downloadJSON(data, `${safe}_Actual_${dateFile}.json`);
+  }, 400);
+}
+
+// ═══ BIND INPUTS & INIT ════════════════════════════════════════════════
 document.querySelectorAll('input:not([type="file"])').forEach(input => {
   input.addEventListener('input', calculate);
 });
-
-// Initial render
 calculate();
-</script><script>
-// Register service worker for offline functionality
+</script>
+
+<script>
+// Service worker for offline functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/billboard-calculator/sw.js')
