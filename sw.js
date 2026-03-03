@@ -1,4 +1,4 @@
-const CACHE_NAME = 'billboard-calculator-v1';
+const CACHE_NAME = 'billboard-calculator-v2';
 const urlsToCache = [
   '/billboard-calculator/',
   '/billboard-calculator/index.html',
